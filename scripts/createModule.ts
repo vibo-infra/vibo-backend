@@ -16,6 +16,7 @@ const files = [
   `${moduleName}.service.ts`,
   `${moduleName}.repository.ts`,
   `${moduleName}.queries.ts`,
+  `${moduleName}.types.ts`,
   `index.ts`,
 ];
 

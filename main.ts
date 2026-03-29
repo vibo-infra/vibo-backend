@@ -3,6 +3,8 @@ import cors from "cors";
 // import dotenv from "dotenv";
 import authRoutes from "./modules/auth";
 import eventsRoutes from "./modules/events";
+import { analyticsRouter } from "./modules/analytics";
+import { webRouter } from "./modules/web";
 
 // dotenv.config();
 
@@ -16,6 +18,9 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/v0/api/auth', authRoutes);
 app.use('/v0/api/events', eventsRoutes);
+
+app.use('/api/web',       webRouter);
+app.use('/api/analytics', analyticsRouter);
 
 
 app.listen(port, () => {

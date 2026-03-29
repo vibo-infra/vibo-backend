@@ -1,0 +1,1 @@
+export { default as webRouter } from './web.routes';
