@@ -19,8 +19,8 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/v0/api/auth', authRoutes);
 app.use('/v0/api/events', eventsRoutes);
 
-app.use('/api/web',       webRouter);
-app.use('/api/analytics', analyticsRouter);
+app.use('/v0/api/web',       webRouter);
+app.use('/v0/api/analytics', analyticsRouter);
 
 
 app.listen(port, () => {

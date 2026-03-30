@@ -17,24 +17,37 @@ export const webQueries = {
     RETURNING id, email, created_at
   `,
 
+  /* Totals must count all signups. Do NOT derive total from the city breakdown —
+     most signups have city NULL (hero/footer forms), so that subquery was empty → total always 0. */
   getWaitlistCount: `
-    SELECT
-      COUNT(*)::int                                                 AS total,
-      COUNT(*) FILTER (WHERE role = 'attendee')::int               AS attendees,
-      COUNT(*) FILTER (WHERE role = 'host')::int                   AS hosts,
-      COALESCE(
-        json_agg(
-          json_build_object('city', city, 'count', city_count)
-          ORDER BY city_count DESC
-        ) FILTER (WHERE city IS NOT NULL),
-        '[]'::json
-      )                                                             AS by_city
-    FROM (
-      SELECT city, role, COUNT(*) AS city_count
+    WITH totals AS (
+      SELECT
+        COUNT(*)::int                                           AS total,
+        COUNT(*) FILTER (WHERE role = 'attendee')::int          AS attendees,
+        COUNT(*) FILTER (WHERE role = 'host')::int              AS hosts
+      FROM waitlist_signups
+    ),
+    by_city_rows AS (
+      SELECT city, role, COUNT(*)::int AS city_count
       FROM waitlist_signups
       WHERE city IS NOT NULL
       GROUP BY city, role
-    ) sub
+    )
+    SELECT
+      t.total,
+      t.attendees,
+      t.hosts,
+      COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object('city', city, 'count', city_count)
+            ORDER BY city_count DESC
+          )
+          FROM by_city_rows
+        ),
+        '[]'::json
+      ) AS by_city
+    FROM totals t
   `,
 
   convertSignup: `
@@ -130,14 +143,16 @@ export const webQueries = {
   // ── FAQs ────────────────────────────────────────────────────────────────────
 
   getAllFaqs: `
-    SELECT id, question, answer, category, ord
+    SELECT id, question, answer, category, ord,
+           link_label, link_href, answer_suffix
     FROM web_faqs
     WHERE is_live = TRUE
     ORDER BY ord ASC
   `,
 
   getFaqsByCategory: `
-    SELECT id, question, answer, category, ord
+    SELECT id, question, answer, category, ord,
+           link_label, link_href, answer_suffix
     FROM web_faqs
     WHERE is_live = TRUE
       AND category = $1
