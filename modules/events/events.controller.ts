@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import * as eventsService from './events.service';
+import * as eventsRepository from './events.repository';
+
 
 export const createEvent = async (req: Request, res: Response) => {
   try {
@@ -37,7 +39,7 @@ export const getEventsByLocation = async (req: Request, res: Response) => {
 
 export const getEventById = async (req: Request, res: Response) => {
   try {
-    const event = await eventsRepository.getEventById(req.params.id);
+    const event = await eventsRepository.getEventById(req.params.id as string);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     return res.status(200).json({ event });
   } catch {
