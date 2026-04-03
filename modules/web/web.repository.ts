@@ -23,6 +23,11 @@ export const getWaitlistCount = async () => {
   return rows[0];
 };
 
+export const updateWaitlistCity = async (email: string, city: string) => {
+  const { rows } = await pool.query(webQueries.updateWaitlistCity, [email, city]);
+  return rows[0] ?? null;
+};
+
 export const convertSignup = async (email: string, appUserId: string) => {
   const { rows } = await pool.query(webQueries.convertSignup, [email, appUserId]);
   return rows[0] ?? null;

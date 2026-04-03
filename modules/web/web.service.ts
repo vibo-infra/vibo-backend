@@ -6,6 +6,8 @@ import {
   JoinWaitlistInput,
   NotifyCityInput,
   ConvertSignupInput,
+  WAITLIST_CITY_OPTIONS,
+  UpdateWaitlistCityInput,
 } from './web.types';
 
 const REFERRAL_MILESTONE = 3;
@@ -87,6 +89,28 @@ export const getWaitlistCount = async () => {
     by_role: { attendees: data.attendees, hosts: data.hosts },
     by_city: data.by_city ?? [],
   };
+};
+
+/** Optional follow-up after join — `city` must be one of the allowed metro labels. */
+export const updateWaitlistCity = async (input: UpdateWaitlistCityInput) => {
+  const email = input.email?.trim();
+  const cityRaw = input.city?.trim();
+  if (!email) {
+    throw new Error('WAITLIST_CITY_EMAIL_REQUIRED');
+  }
+  if (!cityRaw) {
+    throw new Error('WAITLIST_CITY_VALUE_REQUIRED');
+  }
+  if (!WAITLIST_CITY_OPTIONS.includes(cityRaw as (typeof WAITLIST_CITY_OPTIONS)[number])) {
+    throw new Error('WAITLIST_CITY_INVALID');
+  }
+
+  const row = await webRepository.updateWaitlistCity(email, cityRaw);
+  if (!row) {
+    throw new Error('WAITLIST_SIGNUP_NOT_FOUND');
+  }
+
+  return { updated: true as const, city: row.city as string };
 };
 
 export const convertSignup = async (input: ConvertSignupInput) => {

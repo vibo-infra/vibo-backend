@@ -19,6 +19,32 @@ export const joinWaitlist = async (req: Request, res: Response) => {
   }
 };
 
+export const updateWaitlistCity = async (req: Request, res: Response) => {
+  try {
+    const { email, city } = req.body ?? {};
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'email is required' });
+    }
+    if (city == null || typeof city !== 'string' || !city.trim()) {
+      return res.status(400).json({ error: 'city is required' });
+    }
+    const data = await webService.updateWaitlistCity({ email, city });
+    return res.status(200).json({ success: true, data });
+  } catch (err: any) {
+    if (err.message === 'WAITLIST_CITY_EMAIL_REQUIRED' || err.message === 'WAITLIST_CITY_VALUE_REQUIRED') {
+      return res.status(400).json({ error: 'email and city are required' });
+    }
+    if (err.message === 'WAITLIST_CITY_INVALID') {
+      return res.status(400).json({ error: 'invalid city' });
+    }
+    if (err.message === 'WAITLIST_SIGNUP_NOT_FOUND') {
+      return res.status(404).json({ error: 'waitlist signup not found' });
+    }
+    console.error('[web] updateWaitlistCity error:', err);
+    return res.status(500).json({ error: 'Something went wrong' });
+  }
+};
+
 export const getWaitlistCount = async (_req: Request, res: Response) => {
   try {
     res.set('Cache-Control', 'public, max-age=60');

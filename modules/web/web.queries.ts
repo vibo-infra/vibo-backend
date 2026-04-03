@@ -50,6 +50,14 @@ export const webQueries = {
     FROM totals t
   `,
 
+  updateWaitlistCity: `
+    UPDATE waitlist_signups
+    SET city = $2
+    WHERE email = $1
+      AND converted = FALSE
+    RETURNING id, city
+  `,
+
   convertSignup: `
     UPDATE waitlist_signups
     SET converted = TRUE, app_user_id = $2

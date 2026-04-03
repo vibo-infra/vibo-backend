@@ -37,3 +37,19 @@ export interface ConvertSignupInput {
   email:   string;
   user_id: string;
 }
+
+export const WAITLIST_CITY_OPTIONS = [
+  'Mumbai',
+  'Bangalore',
+  'Pune',
+  'Hyderabad',
+  'Delhi',
+  'Others',
+] as const;
+
+export type WaitlistCityOption = (typeof WAITLIST_CITY_OPTIONS)[number];
+
+export interface UpdateWaitlistCityInput {
+  email: string;
+  city:  string;
+}
