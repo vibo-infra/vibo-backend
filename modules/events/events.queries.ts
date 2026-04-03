@@ -1,6 +1,6 @@
 export const CREATE_LOCATION = `
-  INSERT INTO location (address, city, state, country, pincode, latitude, longitude, place_name)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+  INSERT INTO location (address, city, state, country, pincode, latitude, longitude)
+  VALUES ($1, $2, $3, $4, $5, $6, $7)
   RETURNING *
 `;
 
@@ -42,8 +42,8 @@ export const GET_EVENTS_BY_LOCATION = `
     e.status,
     e.audience_type,
 
-    -- Location details
-    l.place_name,
+    -- Location details (no place_name column — use address)
+    l.address   AS place_name,
     l.city,
     l.latitude,
     l.longitude,
@@ -93,7 +93,8 @@ export const GET_EVENTS_BY_LOCATION = `
 export const GET_EVENT_BY_ID = `
   SELECT
     e.*,
-    l.address, l.city, l.state, l.latitude, l.longitude, l.place_name,
+    l.address, l.city, l.state, l.latitude, l.longitude,
+    l.address AS place_name,
     c.name AS category_name, c.icon_url AS category_icon,
     p.first_name AS host_first_name, p.avatar_url AS host_avatar
   FROM event e

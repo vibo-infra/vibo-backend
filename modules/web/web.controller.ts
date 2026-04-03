@@ -175,7 +175,8 @@ export const getNearbyEvents = async (req: Request, res: Response) => {
     const { city = 'Mumbai', limit = '6', category } = req.query as Record<string, string>;
     const data = await webService.getNearbyEvents(city, parseInt(limit, 10), category);
     return res.status(200).json({ success: true, data });
-  } catch {
+  } catch (err: any) {
+    console.error(err);
     return res.status(500).json({ error: 'Something went wrong' });
   }
 };

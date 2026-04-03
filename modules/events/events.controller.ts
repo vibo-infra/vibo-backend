@@ -11,6 +11,7 @@ export const createEvent = async (req: Request, res: Response) => {
     );
     return res.status(201).json({ event });
   } catch (err: any) {
+    console.error(err);
     return res.status(500).json({ error: 'Failed to create event' });
   }
 };
@@ -32,7 +33,8 @@ export const getEventsByLocation = async (req: Request, res: Response) => {
     });
 
     return res.status(200).json(result);
-  } catch {
+  } catch(err: any) {
+    console.error(err);
     return res.status(500).json({ error: 'Failed to fetch events' });
   }
 };

@@ -203,27 +203,28 @@ export const webQueries = {
     ORDER BY ord ASC
   `,
 
-  // ── Events nearby (reads app tables — read only) ────────────────────────────
+  // ── Events nearby (same `event` / `location` / `event_category` as events module) ──
 
   getNearbyEvents: `
     SELECT
-      e.id,
-      e.title,
-      ec.name                                AS category,
-      l.name                                 AS location,
+      e.event_id                             AS id,
+      e.event_name                           AS title,
+      c.name                                 AS category,
+      COALESCE(NULLIF(TRIM(l.address), ''), l.city, '') AS location,
       l.city,
       e.price,
-      (e.price IS NULL OR e.price = 0)       AS is_free,
-      e.starts_at
-    FROM events e
-    JOIN event_categories ec ON ec.id = e.category_id
-    JOIN locations        l  ON l.id  = e.location_id
+      e.is_free,
+      e.start_time                           AS starts_at
+    FROM event e
+    JOIN location       l ON l.location_id  = e.location_id
+    JOIN event_category c ON c.category_id = e.category_id
     WHERE
-      l.city    = $1
-      AND e.starts_at > NOW()
-      AND e.is_active = TRUE
-      AND ($2::text IS NULL OR ec.name ILIKE $2)
-    ORDER BY e.starts_at ASC
+      l.city ILIKE $1
+      AND e.start_time > NOW()
+      AND e.status = 'published'
+      AND e.is_private = FALSE
+      AND ($2::text IS NULL OR c.name ILIKE $2)
+    ORDER BY e.start_time ASC
     LIMIT $3
   `,
 };

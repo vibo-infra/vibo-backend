@@ -16,9 +16,17 @@ export const createLocation = async (data: {
   longitude: number;
   placeName: string;
 }) => {
+  const addressLine =
+    [data.placeName?.trim(), data.address?.trim()].filter(Boolean).join(" · ") ||
+    null;
   const { rows } = await pool.query(CREATE_LOCATION, [
-    data.address, data.city, data.state, data.country,
-    data.pincode ?? null, data.latitude, data.longitude, data.placeName,
+    addressLine,
+    data.city,
+    data.state,
+    data.country,
+    data.pincode ?? null,
+    data.latitude,
+    data.longitude,
   ]);
   return rows[0];
 };

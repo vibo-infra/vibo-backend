@@ -155,7 +155,7 @@ export const getContent = async (section?: string) => {
 };
 
 export const getContentByKey = async (key: string) => {
-  return webRepository.getContentByKey(key);
+  return webRepository.getContentByKey(key  );
 };
 
 // ── FAQs ──────────────────────────────────────────────────────────────────────
