@@ -5,13 +5,18 @@ import authRoutes from "./modules/auth";
 import eventsRoutes from "./modules/events";
 import { analyticsRouter } from "./modules/analytics";
 import { webRouter } from "./modules/web";
+import { ALLOWED_ORIGINS } from "./config/allowOrigin";
 
 // dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8000;
 
-app.use(cors());
+app.use(cors({
+  origin: ALLOWED_ORIGINS,
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get('/health', (req, res) => {
