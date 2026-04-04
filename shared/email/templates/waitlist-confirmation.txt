@@ -1,10 +1,11 @@
-You're in — VIBO ({{city_label}})
+You're in — VIBO{{txt_header_suffix}}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-You're #{{position}} on the waitlist in {{city_label}}.
+You're #{{position}} on the VIBO waitlist{{subject_suffix}}.
 
-We've saved your spot. The moment we're ready for you, this inbox gets
-the first ping — no one else's. See ya soon. Stay tuned.
+{{intro_paragraph_text}}
+
+See ya soon. Stay tuned.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

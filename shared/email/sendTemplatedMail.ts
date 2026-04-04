@@ -18,6 +18,38 @@ const siteUrl = () =>
 
 const supportEmail = () => process.env.SUPPORT_EMAIL || 'sayhellovibo@gmail.com';
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Sets city_label, subject_suffix, spot_subtitle, intro paragraphs from merged vars.
+ * No city → neutral copy (no fake default city).
+ */
+export function applyWaitlistCityDerivedFields(v: Record<string, string>): void {
+  const city = (v.city_label?.trim() || v.city?.trim() || '').trim();
+  v.city_label = city;
+  const has = city.length > 0;
+
+  v.subject_suffix = has ? ` in ${city}` : '';
+  v.spot_subtitle = has ? `in ${city}` : 'Early access';
+
+  v.txt_header_suffix = has ? ` (${city})` : '';
+
+  if (has) {
+    const esc = escapeHtml(city);
+    v.intro_paragraph_inner = `We've saved your spot on the VIBO waitlist for <strong>${esc}</strong>. The moment we're ready for you, this inbox gets the first ping — no one else's.`;
+    v.intro_paragraph_text = `We've saved your spot on the VIBO waitlist for ${city}. The moment we're ready for you, this inbox gets the first ping — no one else's.`;
+  } else {
+    v.intro_paragraph_inner = `We've saved your spot on the VIBO waitlist. You haven't chosen a city yet — that's completely fine. Add one when you're ready, or we'll connect you when VIBO is live in your area. This inbox still gets the first ping when it's time.`;
+    v.intro_paragraph_text = `We've saved your spot on the VIBO waitlist. You haven't chosen a city yet — that's fine. Add one when you're ready, or we'll connect you when VIBO is live in your area. This inbox still gets the first ping when it's time.`;
+  }
+}
+
 export type SendFileTemplateParams = {
   templateKey: EmailTemplateKey;
   to: string;
@@ -123,14 +155,16 @@ export function buildWaitlistVariables(params: {
   city?: string | null;
 }): Record<string, string> {
   const base = siteUrl();
-  return {
+  const out: Record<string, string> = {
     position: String(params.position),
     referralCode: params.referralCode,
     referralUrl: `${base}/?ref=${encodeURIComponent(params.referralCode)}`,
-    city_label: params.city?.trim() || 'Mumbai',
+    city_label: (params.city ?? '').trim(),
     site_url: base,
     support_email: supportEmail(),
   };
+  applyWaitlistCityDerivedFields(out);
+  return out;
 }
 
 export function buildReferralMilestoneVariables(params: {

@@ -8,6 +8,7 @@ import {
   buildCityLaunchVariables,
   buildReferralMilestoneVariables,
   isFileTemplateKey,
+  applyWaitlistCityDerivedFields,
 } from '../../shared/email/sendTemplatedMail';
 import type { EmailTemplateKey } from '../../shared/email/templateMeta';
 import { generateReferralCode } from '../../shared/utils/email/referral';
@@ -374,7 +375,9 @@ function buildVarsForTemplate(
       referralCode: code,
       city: v.city || g.city || null,
     });
-    return { ...base, ...g, ...v };
+    const merged = { ...base, ...g, ...v } as Record<string, string>;
+    applyWaitlistCityDerivedFields(merged);
+    return merged;
   }
   if (templateKey === 'referral_milestone') {
     const code = v.referralCode ?? g.referralCode;

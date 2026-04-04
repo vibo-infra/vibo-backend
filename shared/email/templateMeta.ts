@@ -19,7 +19,7 @@ export type TemplateMeta = {
 
 export const TEMPLATE_META: Record<EmailTemplateKey, TemplateMeta> = {
   waitlist_confirmation: {
-    subjectTemplate: "You're #{{position}} on the VIBO waitlist in {{city_label}}",
+    subjectTemplate: "You're #{{position}} on the VIBO waitlist{{subject_suffix}}",
     htmlFile: 'waitlist-confirmation.html',
     textFile: 'waitlist-confirmation.txt',
   },
