@@ -1,6 +1,15 @@
 import * as webRepository from './web.repository';
 import * as analyticsService from '../analytics/analytics.service';
 import * as email from '../../shared/utils/email/email';
+import {
+  sendFileTemplateEmail,
+  sendRawTransactionalEmail,
+  buildWaitlistVariables,
+  buildCityLaunchVariables,
+  buildReferralMilestoneVariables,
+  isFileTemplateKey,
+} from '../../shared/email/sendTemplatedMail';
+import type { EmailTemplateKey } from '../../shared/email/templateMeta';
 import { generateReferralCode } from '../../shared/utils/email/referral';
 import {
   JoinWaitlistInput,
@@ -8,6 +17,7 @@ import {
   ConvertSignupInput,
   WAITLIST_CITY_OPTIONS,
   UpdateWaitlistCityInput,
+  SendEmailBatchInput,
 } from './web.types';
 
 const REFERRAL_MILESTONE = 3;
@@ -22,7 +32,8 @@ export const joinWaitlist = async (input: JoinWaitlistInput) => {
     return {
       already_registered: true,
       referral_code: refCode?.code ?? null,
-      position: null,
+      position:
+        existing.signup_position != null ? Number(existing.signup_position) : null,
     };
   }
 
@@ -64,15 +75,18 @@ export const joinWaitlist = async (input: JoinWaitlistInput) => {
     }
   }
 
-  // Queue position
-  const countData = await webRepository.getWaitlistCount();
-  const position  = countData.total;
+  // Same # as UI — stored on row (signup_position), set by DB trigger
+  const position =
+    signup.signup_position != null
+      ? Number(signup.signup_position)
+      : (await webRepository.getWaitlistCount()).total;
 
   // Confirmation email — non-blocking, never fails registration
   email.sendWaitlistConfirmation({
     to:           input.email,
     referralCode: code,
     position,
+    city:         input.city ?? null,
   }).catch(err => console.error('[email] waitlist confirmation failed:', err));
 
   return {
@@ -253,6 +267,332 @@ export const notifyCity = async (input: NotifyCityInput) => {
   }).catch(() => {});
 
   return { queued: sent, dry_run: false, preview: null };
+};
+
+// ── Batch / personalised sends (internal API) ─────────────────────────────────
+
+type BatchRow = { email: string; variables: Record<string, string> };
+
+async function resolveRecipientsForBatch(
+  input: SendEmailBatchInput
+): Promise<BatchRow[]> {
+  if (input.recipients?.length) {
+    return input.recipients.map((r) => ({
+      email: r.email.trim(),
+      variables: { ...(r.variables || {}) },
+    }));
+  }
+  const f = input.filter;
+  if (!f) {
+    throw new Error('EMAIL_BATCH_NO_RECIPIENTS');
+  }
+  if (f.city) {
+    const rows = await webRepository.getSignupsByCity(f.city);
+    return rows.map((r) => ({ email: r.email, variables: {} }));
+  }
+  if (f.used_referral_code) {
+    const rows = await webRepository.getSignupsByReferralCodeUsed(
+      f.used_referral_code
+    );
+    return rows.map((r) => ({
+      email: r.email,
+      variables: {
+        city: r.city || '',
+        role: r.role,
+      },
+    }));
+  }
+  if (f.all_waitlist) {
+    if (!input.confirm_all_waitlist) {
+      throw new Error('EMAIL_BATCH_CONFIRM_ALL_REQUIRED');
+    }
+    const rows = await webRepository.getAllNonConvertedWaitlist();
+    return rows.map((r) => ({
+      email: r.email,
+      variables: {
+        city: r.city || '',
+        role: r.role,
+      },
+    }));
+  }
+  throw new Error('EMAIL_BATCH_NO_RECIPIENTS');
+}
+
+/** If `waitlist_confirmation` and recipient omitted position/code, load from DB. */
+async function enrichWaitlistConfirmationRow(row: BatchRow): Promise<void> {
+  const v = row.variables || {};
+  const hasPos =
+    v.position != null && String(v.position).trim() !== '';
+  const codeRaw = v.referralCode ?? v.referral_code;
+  const hasCode = Boolean(codeRaw && String(codeRaw).trim() !== '');
+  if (hasPos && hasCode) return;
+
+  const db = await webRepository.getWaitlistConfirmationDataByEmail(row.email);
+  if (!db) {
+    throw new Error(
+      `No active waitlist signup found for ${row.email} (or already converted)`
+    );
+  }
+  if (!db.referral_code) {
+    throw new Error(`No referral code on file for ${row.email}`);
+  }
+
+  row.variables = {
+    ...v,
+    position: hasPos ? String(v.position) : String(db.position),
+    referralCode: hasCode ? String(codeRaw) : db.referral_code,
+    city: (v.city != null && String(v.city).trim() !== ''
+      ? v.city
+      : db.city || '') as string,
+  };
+}
+
+function buildVarsForTemplate(
+  templateKey: EmailTemplateKey,
+  row: BatchRow,
+  input: SendEmailBatchInput
+): Record<string, string> {
+  const g = input.global_variables || {};
+  const v = row.variables;
+
+  if (templateKey === 'city_launch') {
+    const city =
+      v.city || input.filter?.city || g.city || 'Mumbai';
+    const base = buildCityLaunchVariables(city, input.message);
+    return { ...base, ...g, ...v };
+  }
+  if (templateKey === 'waitlist_confirmation') {
+    const pos = v.position ?? g.position;
+    const code = v.referralCode ?? v.referral_code ?? g.referralCode;
+    if (pos == null || pos === '' || !code) {
+      throw new Error(
+        'waitlist_confirmation needs variables.position and variables.referralCode per recipient (or global_variables)'
+      );
+    }
+    const base = buildWaitlistVariables({
+      position: pos,
+      referralCode: code,
+      city: v.city || g.city || null,
+    });
+    return { ...base, ...g, ...v };
+  }
+  if (templateKey === 'referral_milestone') {
+    const code = v.referralCode ?? g.referralCode;
+    const count = v.count ?? g.count;
+    if (!code || count == null || count === '') {
+      throw new Error(
+        'referral_milestone needs variables.referralCode and variables.count'
+      );
+    }
+    const base = buildReferralMilestoneVariables({
+      referralCode: code,
+      count,
+    });
+    return { ...base, ...g, ...v };
+  }
+  return { ...g, ...v };
+}
+
+export const sendEmailBatch = async (input: SendEmailBatchInput) => {
+  if (input.template_key === 'raw_transactional') {
+    if (
+      !input.raw?.subject?.trim() ||
+      input.raw.html == null ||
+      input.raw.text == null
+    ) {
+      throw new Error('EMAIL_BATCH_RAW_INVALID');
+    }
+    const list = await resolveRecipientsForBatch(input);
+    if (input.dry_run) {
+      return {
+        dry_run: true,
+        total: list.length,
+        previews: list.slice(0, 5).map((r) => ({ email: r.email })),
+      };
+    }
+    const results: unknown[] = [];
+    for (const row of list) {
+      const r = await sendRawTransactionalEmail({
+        to: row.email,
+        subject: input.raw.subject,
+        html: input.raw.html,
+        text: input.raw.text,
+        templateKeyForLog: 'raw_transactional',
+        logContext: { trigger: 'api_send_batch', filter: input.filter },
+      });
+      results.push({
+        email: row.email,
+        ok: r.ok,
+        log_id: r.logId,
+        message_id: 'messageId' in r ? r.messageId : undefined,
+        error: 'error' in r ? r.error : undefined,
+      });
+    }
+    return { dry_run: false, total: list.length, results };
+  }
+
+  if (!isFileTemplateKey(input.template_key)) {
+    throw new Error('EMAIL_BATCH_INVALID_TEMPLATE');
+  }
+
+  const templateKey = input.template_key as EmailTemplateKey;
+
+  if (templateKey === 'referral_milestone' && !input.recipients?.length) {
+    throw new Error(
+      'referral_milestone must use explicit recipients (referrer email + referralCode + count)'
+    );
+  }
+
+  let list: BatchRow[];
+
+  if (
+    templateKey === 'waitlist_confirmation' &&
+    input.filter?.all_waitlist &&
+    input.confirm_all_waitlist
+  ) {
+    const rows = await webRepository.getWaitlistWithReferralForResend();
+    const skipped: { email: string; reason: string }[] = [];
+    list = [];
+    for (const r of rows) {
+      if (!r.referral_code) {
+        skipped.push({ email: r.email, reason: 'no_referral_code' });
+        continue;
+      }
+      list.push({
+        email: r.email,
+        variables: {
+          position: String(r.position),
+          referralCode: r.referral_code,
+          city: r.city || '',
+        },
+      });
+    }
+    if (input.dry_run) {
+      const previews = list.slice(0, 5).map((row) => {
+        try {
+          const variables = buildVarsForTemplate(templateKey, row, input);
+          return { email: row.email, variables };
+        } catch (e: unknown) {
+          return {
+            email: row.email,
+            error: e instanceof Error ? e.message : String(e),
+          };
+        }
+      });
+      return {
+        dry_run: true,
+        total: list.length,
+        skipped_no_code: skipped.length,
+        skipped,
+        previews,
+      };
+    }
+    const results: unknown[] = [];
+    for (const s of skipped) {
+      results.push({ email: s.email, ok: false, error: s.reason });
+    }
+    for (const row of list) {
+      try {
+        const variables = buildVarsForTemplate(templateKey, row, input);
+        const r = await sendFileTemplateEmail({
+          templateKey,
+          to: row.email,
+          variables,
+          subjectOverride: input.subject_override,
+          logContext: {
+            trigger: 'api_send_batch_waitlist_resend',
+            filter: input.filter,
+          },
+        });
+        results.push({
+          email: row.email,
+          ok: r.ok,
+          log_id: r.logId,
+          message_id: 'messageId' in r ? r.messageId : undefined,
+          error: 'error' in r ? r.error : undefined,
+        });
+      } catch (e: unknown) {
+        results.push({
+          email: row.email,
+          ok: false,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    return {
+      dry_run: false,
+      total: list.length,
+      skipped_no_code: skipped.length,
+      results,
+    };
+  }
+
+  if (templateKey === 'waitlist_confirmation' && !input.recipients?.length) {
+    throw new Error(
+      'waitlist_confirmation: pass recipients[], or filter.all_waitlist + confirm_all_waitlist'
+    );
+  }
+
+  list = await resolveRecipientsForBatch(input);
+
+  if (input.dry_run) {
+    const previews: unknown[] = [];
+    for (const row of list.slice(0, 5)) {
+      try {
+        const rowCopy = {
+          email: row.email,
+          variables: { ...row.variables },
+        };
+        if (templateKey === 'waitlist_confirmation') {
+          await enrichWaitlistConfirmationRow(rowCopy);
+        }
+        const variables = buildVarsForTemplate(
+          templateKey,
+          rowCopy,
+          input
+        );
+        previews.push({ email: row.email, variables });
+      } catch (e: unknown) {
+        previews.push({
+          email: row.email,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    return { dry_run: true, total: list.length, previews };
+  }
+
+  const results: unknown[] = [];
+  for (const row of list) {
+    try {
+      if (templateKey === 'waitlist_confirmation') {
+        await enrichWaitlistConfirmationRow(row);
+      }
+      const variables = buildVarsForTemplate(templateKey, row, input);
+      const r = await sendFileTemplateEmail({
+        templateKey,
+        to: row.email,
+        variables,
+        subjectOverride: input.subject_override,
+        logContext: { trigger: 'api_send_batch', filter: input.filter },
+      });
+      results.push({
+        email: row.email,
+        ok: r.ok,
+        log_id: r.logId,
+        message_id: 'messageId' in r ? r.messageId : undefined,
+        error: 'error' in r ? r.error : undefined,
+      });
+    } catch (e: unknown) {
+      results.push({
+        email: row.email,
+        ok: false,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  return { dry_run: false, total: list.length, results };
 };
 
 // ── Private helpers ───────────────────────────────────────────────────────────

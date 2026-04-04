@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VIBO is live in {{city}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f0ede8;font-family:'Georgia','Times New Roman',serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f0ede8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:540px;">
+
+          <!-- Logo -->
+          <tr>
+            <td style="padding:0 0 20px 0;text-align:center;">
+              <span style="font-size:22px;font-weight:bold;letter-spacing:0.12em;color:#1a1208;text-transform:uppercase;">VIBO</span>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:10px;border:1px solid #e2ddd6;overflow:hidden;">
+
+              <!-- Hero strip — warm brand orange -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background:#c2410c;padding:28px 32px 24px 32px;">
+                    <p style="margin:0 0 4px 0;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#fed7aa;">The wait is over</p>
+                    <p style="margin:0;font-size:28px;font-weight:bold;color:#ffffff;line-height:1.2;">
+                      VIBO is live<br>in {{city}}.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Body -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding:32px 32px 28px 32px;">
+
+                    <p style="margin:0 0 18px 0;font-size:16px;line-height:1.65;color:#3a3530;">
+                      You waited. We built. And now it's here — 
+                      VIBO is officially available in <strong>{{city}}</strong>.
+                    </p>
+
+                    <!-- Custom message block -->
+                    <div style="margin:0 0 24px 0;font-size:16px;line-height:1.65;color:#3a3530;">
+                      {{body_inner}}
+                    </div>
+
+                    <!-- App download buttons -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                      <tr>
+                        <td style="padding-right:12px;">
+                          <a href="{{app_store_url}}" style="display:inline-block;background:#1a1208;color:#ffffff;text-decoration:none;font-size:13px;font-family:Georgia,serif;letter-spacing:0.06em;padding:12px 22px;border-radius:6px;">
+                            App Store
+                          </a>
+                        </td>
+                        <td>
+                          <a href="{{play_store_url}}" style="display:inline-block;background:#1a1208;color:#ffffff;text-decoration:none;font-size:13px;font-family:Georgia,serif;letter-spacing:0.06em;padding:12px 22px;border-radius:6px;">
+                            Google Play
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Footer -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background:#faf9f7;border-top:1px solid #ece9e4;padding:20px 32px 24px 32px;">
+                    <p style="margin:0;font-size:12px;line-height:1.6;color:#aaa;">
+                      You received this because you joined the VIBO waitlist for {{city}}.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

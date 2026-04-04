@@ -38,6 +38,53 @@ export const getSignupsByCity = async (city: string) => {
   return rows as { email: string; id: string }[];
 };
 
+export const getSignupsByReferralCodeUsed = async (code: string) => {
+  const { rows } = await pool.query(webQueries.getSignupsByReferralCodeUsed, [code]);
+  return rows as {
+    email: string;
+    id: string;
+    city: string | null;
+    role: string;
+    ref_code_used: string | null;
+  }[];
+};
+
+export const getAllNonConvertedWaitlist = async () => {
+  const { rows } = await pool.query(webQueries.getAllNonConvertedWaitlist);
+  return rows as {
+    email: string;
+    id: string;
+    city: string | null;
+    role: string;
+    ref_code_used: string | null;
+  }[];
+};
+
+export const getWaitlistWithReferralForResend = async () => {
+  const { rows } = await pool.query(webQueries.getWaitlistWithReferralForResend);
+  return rows as {
+    email: string;
+    city: string | null;
+    referral_code: string | null;
+    position: number;
+  }[];
+};
+
+export const getWaitlistConfirmationDataByEmail = async (email: string) => {
+  const { rows } = await pool.query(webQueries.getWaitlistConfirmationDataByEmail, [
+    email,
+  ]);
+  const r = rows[0] as
+    | {
+        email: string;
+        city: string | null;
+        referral_code: string | null;
+        position: number;
+      }
+    | undefined;
+  return r ?? null;
+};
+
 // ── Referral ──────────────────────────────────────────────────────────────────
 
 export const insertReferralCode = async (code: string, ownerId: string) => {

@@ -1,0 +1,16 @@
+{{count}} people joined VIBO through your link
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+That's real.
+
+{{count}} people trusted your word enough to sign up. That's not nothing
+— that's the whole point of how good things spread.
+
+Every one of them moved you closer to the front. Keep going if you want
+— or don't. Either way, we're glad you're here.
+
+Your link:
+{{referralUrl}}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You received this as a VIBO waitlist member whose referral link is working.

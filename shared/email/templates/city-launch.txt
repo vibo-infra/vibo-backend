@@ -1,0 +1,16 @@
+The wait is over — VIBO is live in {{city}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You waited. We built. And now it's here.
+
+VIBO is officially available in {{city}}.
+
+{{body_plain}}
+
+Download the app:
+
+  App Store:   {{app_store_url}}
+  Google Play: {{play_store_url}}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You received this because you joined the VIBO waitlist for {{city}}.

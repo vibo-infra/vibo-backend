@@ -3,7 +3,7 @@ export const webQueries = {
   // ── Waitlist ────────────────────────────────────────────────────────────────
 
   findSignupByEmail: `
-    SELECT id, email, converted, ref_code_used
+    SELECT id, email, converted, ref_code_used, signup_position
     FROM waitlist_signups
     WHERE email = $1
     LIMIT 1
@@ -14,7 +14,7 @@ export const webQueries = {
       (email, city, role, source, utm_source, utm_medium,
        utm_campaign, ref_code_used, referred_by)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    RETURNING id, email, created_at
+    RETURNING id, email, created_at, signup_position
   `,
 
   /* Totals must count all signups. Do NOT derive total from the city breakdown —
@@ -71,6 +71,48 @@ export const webQueries = {
     WHERE city = $1
       AND converted = FALSE
     ORDER BY created_at ASC
+  `,
+
+  getSignupsByReferralCodeUsed: `
+    SELECT email, id, city, role, ref_code_used
+    FROM waitlist_signups
+    WHERE ref_code_used = $1
+      AND converted = FALSE
+    ORDER BY created_at ASC
+  `,
+
+  getAllNonConvertedWaitlist: `
+    SELECT email, id, city, role, ref_code_used
+    FROM waitlist_signups
+    WHERE converted = FALSE
+    ORDER BY created_at ASC
+  `,
+
+  /** Single signup by email — position = immutable signup_position (same # as UI at join) */
+  getWaitlistConfirmationDataByEmail: `
+    SELECT
+      ws.email,
+      ws.city,
+      rc.code AS referral_code,
+      ws.signup_position AS position
+    FROM waitlist_signups ws
+    LEFT JOIN referral_codes rc ON rc.owner_id = ws.id
+    WHERE ws.converted = FALSE
+      AND LOWER(TRIM(ws.email)) = LOWER(TRIM($1))
+    LIMIT 1
+  `,
+
+  /** Bulk resend — signup_position matches the # shown when they joined */
+  getWaitlistWithReferralForResend: `
+    SELECT
+      ws.email,
+      ws.city,
+      rc.code AS referral_code,
+      ws.signup_position AS position
+    FROM waitlist_signups ws
+    LEFT JOIN referral_codes rc ON rc.owner_id = ws.id
+    WHERE ws.converted = FALSE
+    ORDER BY ws.signup_position ASC
   `,
 
   // ── Referral ────────────────────────────────────────────────────────────────

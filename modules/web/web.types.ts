@@ -53,3 +53,38 @@ export interface UpdateWaitlistCityInput {
   email: string;
   city:  string;
 }
+
+/** Internal: POST /v0/api/web/email/send-batch */
+export interface SendEmailBatchInput {
+  template_key:
+    | 'waitlist_confirmation'
+    | 'city_launch'
+    | 'referral_milestone'
+    | 'raw_transactional';
+  dry_run?: boolean;
+  /** Interpolates {{placeholders}}; only for file templates */
+  subject_override?: string;
+  /** Extra {{vars}} merged into every recipient (file templates) */
+  global_variables?: Record<string, string>;
+  /** City-launch HTML fragment (inside the card) */
+  message?: string;
+  /**
+   * Explicit list — or use filter.all_waitlist + confirm for waitlist_confirmation
+   * (loads position + referral code from DB). referral_milestone still requires recipients.
+   */
+  recipients?: Array<{ email: string; variables?: Record<string, string> }>;
+  filter?: {
+    city?: string;
+    /** Signups who joined using this referral code */
+    used_referral_code?: string;
+    /** Entire waitlist — must set confirm_all_waitlist: true */
+    all_waitlist?: boolean;
+  };
+  confirm_all_waitlist?: boolean;
+  /** Required when template_key is raw_transactional */
+  raw?: {
+    subject: string;
+    html: string;
+    text: string;
+  };
+}

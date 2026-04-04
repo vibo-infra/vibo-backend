@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{count}} people joined through your link</title>
+</head>
+<body style="margin:0;padding:0;background:#f0ede8;font-family:'Georgia','Times New Roman',serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f0ede8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:540px;">
+
+          <!-- Logo -->
+          <tr>
+            <td style="padding:0 0 20px 0;text-align:center;">
+              <span style="font-size:22px;font-weight:bold;letter-spacing:0.12em;color:#1a1208;text-transform:uppercase;">VIBO</span>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:10px;border:1px solid #e2ddd6;overflow:hidden;">
+
+              <!-- Accent top strip -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background:#c2410c;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+
+              <!-- Body -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding:36px 32px 28px 32px;">
+
+                    <!-- Count highlight -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom:28px;">
+                      <tr>
+                        <td style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:14px 22px;text-align:center;">
+                          <span style="display:block;font-size:48px;font-weight:bold;color:#c2410c;line-height:1;">{{count}}</span>
+                          <span style="display:block;font-size:13px;color:#9a3412;margin-top:4px;letter-spacing:0.04em;">people joined through your link</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:0 0 16px 0;font-size:18px;line-height:1.5;color:#1a1a1a;">
+                      That's real.
+                    </p>
+                    <p style="margin:0 0 18px 0;font-size:16px;line-height:1.65;color:#3a3530;">
+                      {{count}} people trusted your word enough to sign up. 
+                      That's not nothing — that's the whole point of how good things spread.
+                    </p>
+                    <p style="margin:0 0 24px 0;font-size:16px;line-height:1.65;color:#3a3530;">
+                      Every one of them moved you closer to the front. Keep going if you want — 
+                      or don't. Either way, we're glad you're here.
+                    </p>
+
+                    <!-- Referral link box -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="background:#f8f5f1;border:1px solid #e2ddd6;border-radius:6px;padding:14px 18px;">
+                          <span style="display:block;font-size:11px;color:#888;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Your link</span>
+                          <a href="{{referralUrl}}" style="font-size:14px;color:#c2410c;text-decoration:underline;word-break:break-all;">{{referralUrl}}</a>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Footer -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background:#faf9f7;border-top:1px solid #ece9e4;padding:20px 32px 24px 32px;">
+                    <p style="margin:0;font-size:12px;line-height:1.6;color:#aaa;">
+                      You received this as a VIBO waitlist member whose referral link is working.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as webService from './web.service';
+import type { SendEmailBatchInput } from './web.types';
 
 // ── Waitlist ──────────────────────────────────────────────────────────────────
 
@@ -192,6 +193,28 @@ export const notifyCity = async (req: Request, res: Response) => {
     const result = await webService.notifyCity({ city, message, dry_run });
     return res.status(200).json({ success: true, data: result });
   } catch {
+    return res.status(500).json({ error: 'Something went wrong' });
+  }
+};
+
+/**
+ * POST /v0/api/web/email/send-batch
+ * Personalised batch sends + DB logs (email_send_logs). Requires x-internal-key.
+ */
+export const sendEmailBatch = async (req: Request, res: Response) => {
+  try {
+    const body = req.body as SendEmailBatchInput | undefined;
+    if (!body?.template_key) {
+      return res.status(400).json({ error: 'template_key is required' });
+    }
+    const data = await webService.sendEmailBatch(body);
+    return res.status(200).json({ success: true, data });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Something went wrong';
+    if (msg.startsWith('EMAIL_BATCH_') || msg.includes('needs variables')) {
+      return res.status(400).json({ error: msg });
+    }
+    console.error('[web] sendEmailBatch error:', err);
     return res.status(500).json({ error: 'Something went wrong' });
   }
 };

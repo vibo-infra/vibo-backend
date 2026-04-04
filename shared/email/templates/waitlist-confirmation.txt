@@ -1,0 +1,12 @@
+You're in — VIBO ({{city_label}})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You're #{{position}} on the waitlist in {{city_label}}.
+
+We've saved your spot. The moment we're ready for you, this inbox gets
+the first ping — no one else's. See ya soon. Stay tuned.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You joined the VIBO waitlist at {{site_url}} using this email address.
+Questions? Reply here or write to {{support_email}}.
