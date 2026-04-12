@@ -56,6 +56,21 @@ export const getWaitlistCount = async (_req: Request, res: Response) => {
   }
 };
 
+/** Non-converted waitlist signups for a city (mobile Home progress). */
+export const getWaitlistCityCount = async (req: Request, res: Response) => {
+  try {
+    const city = typeof req.query.city === 'string' ? req.query.city : '';
+    res.set('Cache-Control', 'public, max-age=30');
+    const data = await webService.getWaitlistCountForCity(city);
+    return res.status(200).json({ success: true, data });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message === 'WAITLIST_CITY_QUERY_REQUIRED') {
+      return res.status(400).json({ error: 'city query parameter is required' });
+    }
+    return res.status(500).json({ error: 'Something went wrong' });
+  }
+};
+
 export const convertSignup = async (req: Request, res: Response) => {
   try {
     const { email, user_id } = req.body;

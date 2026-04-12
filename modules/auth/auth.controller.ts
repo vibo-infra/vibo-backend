@@ -32,6 +32,9 @@ export const register = async (req: Request, res: Response) => {
     if (err.message === 'DEFAULT_CITY_REQUIRED') {
       return res.status(400).json({ error: 'defaultCity is required at signup' });
     }
+    if (err.message === 'INVALID_DEFAULT_CITY') {
+      return res.status(400).json({ error: 'That city is not available for signup yet' });
+    }
     return res.status(500).json({ error: 'Something went wrong' });
   }
 };

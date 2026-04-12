@@ -1,7 +1,6 @@
 import { pool } from '../../core/database/client';
 import { applyDeltaWithClient } from '../spark/spark.repository';
-
-const REFERRAL_INVITE_SPARKS = 10;
+import { getReferralInviteSparksCached } from '../app-config/launchMarkets.service';
 
 /** Credits referrer once per invitee; safe to call multiple times. */
 export const tryGrantReferralBonus = async (
@@ -11,6 +10,7 @@ export const tryGrantReferralBonus = async (
   if (!referrerUserId || !inviteeUserId || referrerUserId === inviteeUserId) {
     return;
   }
+  const sparks = await getReferralInviteSparksCached();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -27,7 +27,7 @@ export const tryGrantReferralBonus = async (
     }
     await applyDeltaWithClient(client, {
       userId: referrerUserId,
-      amount: REFERRAL_INVITE_SPARKS,
+      amount: sparks,
       reason: 'referral_invite_bonus',
       metadata: { invitee_user_id: inviteeUserId },
     });

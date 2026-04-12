@@ -21,7 +21,7 @@ Migrations live in `core/database/migrations/` and run in filename order.
 1. Each **registered user** has a unique **`referral_code`** on the `users` row (short alphanumeric string). They can share it from the app (e.g. “Invite friends”).
 2. When someone **creates an account** via `POST /v0/api/auth/register`, they may pass an optional **`referralCode`** matching another user’s code (case-insensitive).
 3. The new user is stored with **`referred_by_user_id`** pointing at that referrer.
-4. **Once per invitee**, the server records a row in **`referral_bonus_granted`** and credits the **referrer +10 Sparks** (via the existing Sparks wallet). Duplicate grants are prevented by the table’s primary key on `invitee_user_id`.
+4. **Once per invitee**, the server records a row in **`referral_bonus_granted`** and credits the **referrer +N Sparks** (via the Sparks wallet; **N** = `app_config.referral_invite_sparks`, default **20**). Duplicate grants are prevented by the table’s primary key on `invitee_user_id`.
 
 This is independent of the **web waitlist** share link (see below).
 
@@ -33,7 +33,7 @@ This is independent of the **web waitlist** share link (see below).
 ### Implementation files
 
 - `modules/auth/auth.service.ts` — resolves `referralCode` → `referred_by_user_id`, calls `tryGrantReferralBonus` after signup.
-- `modules/auth/referralBonus.service.ts` — idempotent +10 Sparks for referrer.
+- `modules/auth/referralBonus.service.ts` — idempotent referral Sparks for referrer (amount from `launchMarkets` / `app_config.referral_invite_sparks`).
 - `modules/auth/referralCode.util.ts` — assigns `referral_code` for new users.
 - `core/database/migrations/20260410107000_referral_app_prefs.sql` and **`20260410110000_...`** — columns + `referral_bonus_granted`; the `10110000` migration also aligns web waitlist storage and drops legacy `referral_codes`.
 

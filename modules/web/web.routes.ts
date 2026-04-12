@@ -7,6 +7,7 @@ const router = Router();
 // ── Waitlist ──────────────────────────────────────────────────────────────────
 router.post(  '/waitlist',          webController.joinWaitlist);
 router.get(   '/waitlist/count',    webController.getWaitlistCount);
+router.get(   '/waitlist/city-count', webController.getWaitlistCityCount);
 router.patch( '/waitlist/city',     webController.updateWaitlistCity);
 router.patch( '/waitlist/convert',  internalOnly, webController.convertSignup);
 

@@ -4,6 +4,7 @@ import {
   type PatchUserInput,
 } from './users.repository';
 import { ensureReferralCodeForExistingUser } from '../auth/referralCode.util';
+import { assertAllowedDefaultCity } from '../app-config/onboardingCities.service';
 
 export { applyPostAuthGrants } from './authGrants.service';
 
@@ -12,6 +13,7 @@ export type WaitlistTierPublic = 'tier1' | 'tier2' | null;
 export type AppHomePreferences = {
   showUpcomingOnHome: boolean;
   showHappeningSoonOnHome: boolean;
+  themeMode?: 'light' | 'dark';
 };
 
 export type PublicAuthUser = {
@@ -41,9 +43,12 @@ function parseAppPreferences(raw: unknown): AppHomePreferences {
     raw && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
       : {};
+  const tm = o.themeMode;
+  const themeMode = tm === 'light' || tm === 'dark' ? tm : undefined;
   return {
     showUpcomingOnHome: o.showUpcomingOnHome !== false,
     showHappeningSoonOnHome: o.showHappeningSoonOnHome !== false,
+    ...(themeMode ? { themeMode } : {}),
   };
 }
 
@@ -81,6 +86,9 @@ export const getPublicAuthUser = async (userId: string) => {
 };
 
 export const updateMe = async (userId: string, input: PatchUserInput) => {
+  if (input.defaultCity !== undefined && input.defaultCity) {
+    await assertAllowedDefaultCity(input.defaultCity);
+  }
   const updated = await patchUser(userId, input);
   return toPublic(updated);
 };

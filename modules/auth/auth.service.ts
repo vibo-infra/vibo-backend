@@ -8,6 +8,7 @@ import * as authRepository from './auth.repository';
 import * as usersService from '../users/users.service';
 import type { PublicAuthUser } from '../users/users.service';
 import { tryGrantReferralBonus } from './referralBonus.service';
+import { assertAllowedDefaultCity } from '../app-config/onboardingCities.service';
 import crypto from 'node:crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -48,6 +49,7 @@ export const register = async (params: {
 
   const city = String(params.defaultCity ?? '').trim();
   if (!city) throw new Error('DEFAULT_CITY_REQUIRED');
+  await assertAllowedDefaultCity(city);
 
   const referredByUserId: string | null = await authRepository.findReferrerUserIdByCode(
     params.referralCode

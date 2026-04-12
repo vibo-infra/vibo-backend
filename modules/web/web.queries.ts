@@ -50,6 +50,15 @@ export const webQueries = {
     FROM totals t
   `,
 
+  /** Non-converted signups with this city label (case-insensitive), all roles combined. */
+  countWaitlistByCity: `
+    SELECT COUNT(*)::int AS n
+    FROM waitlist_signups
+    WHERE converted = FALSE
+      AND city IS NOT NULL
+      AND LOWER(TRIM(city)) = LOWER(TRIM($1::text))
+  `,
+
   updateWaitlistCity: `
     UPDATE waitlist_signups
     SET city = $2

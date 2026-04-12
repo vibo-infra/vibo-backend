@@ -35,7 +35,14 @@ export const patchMe = async (req: Request, res: Response) => {
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.status(200).json({ user });
-  } catch (e) {
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '';
+    if (msg === 'INVALID_DEFAULT_CITY') {
+      return res.status(400).json({ error: 'That city is not available yet' });
+    }
+    if (msg === 'DEFAULT_CITY_REQUIRED') {
+      return res.status(400).json({ error: 'City is required' });
+    }
     console.error(e);
     return res.status(500).json({ error: 'Failed to update profile' });
   }

@@ -38,6 +38,7 @@ export interface ConvertSignupInput {
   user_id: string;
 }
 
+/** Waitlist chip set (marketing). App onboarding cities live in `app_config.onboarding_cities`. */
 export const WAITLIST_CITY_OPTIONS = [
   'Mumbai',
   'Bangalore',

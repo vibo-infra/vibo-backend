@@ -107,6 +107,15 @@ export const getWaitlistCount = async () => {
   };
 };
 
+export const getWaitlistCountForCity = async (cityRaw: string) => {
+  const city = String(cityRaw ?? '').trim();
+  if (!city) {
+    throw new Error('WAITLIST_CITY_QUERY_REQUIRED');
+  }
+  const count = await webRepository.countWaitlistByCity(city);
+  return { count };
+};
+
 /** Optional follow-up after join — `city` must be one of the allowed metro labels. */
 export const updateWaitlistCity = async (input: UpdateWaitlistCityInput) => {
   const email = input.email?.trim();
