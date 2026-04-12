@@ -29,6 +29,7 @@ export const CREATE_EVENT = `
 export const GET_EVENTS_BY_LOCATION = `
   SELECT
     e.event_id,
+    e.host_id,
     e.event_name,
     e.event_description,
     e.cover_image_url,
@@ -96,6 +97,7 @@ export const GET_EVENTS_BY_LOCATION = `
 export const LIST_MY_UPCOMING_HOSTED_EVENTS = `
   SELECT
     e.event_id,
+    e.host_id,
     e.event_name,
     e.event_description,
     e.cover_image_url,
