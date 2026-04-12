@@ -93,10 +93,9 @@ export const webQueries = {
     SELECT
       ws.email,
       ws.city,
-      rc.code AS referral_code,
+      ws.referral_share_code AS referral_code,
       ws.signup_position AS position
     FROM waitlist_signups ws
-    LEFT JOIN referral_codes rc ON rc.owner_id = ws.id
     WHERE ws.converted = FALSE
       AND LOWER(TRIM(ws.email)) = LOWER(TRIM($1))
     LIMIT 1
@@ -107,62 +106,68 @@ export const webQueries = {
     SELECT
       ws.email,
       ws.city,
-      rc.code AS referral_code,
+      ws.referral_share_code AS referral_code,
       ws.signup_position AS position
     FROM waitlist_signups ws
-    LEFT JOIN referral_codes rc ON rc.owner_id = ws.id
     WHERE ws.converted = FALSE
     ORDER BY ws.signup_position ASC
   `,
 
-  // ── Referral ────────────────────────────────────────────────────────────────
-
-  insertReferralCode: `
-    INSERT INTO referral_codes (code, owner_id)
-    VALUES ($1, $2)
-    RETURNING code
+  setWaitlistShareCode: `
+    UPDATE waitlist_signups
+    SET referral_share_code = $1
+    WHERE id = $2
+    RETURNING referral_share_code AS code
   `,
 
-  getReferralCodeByOwner: `
-    SELECT code
-    FROM referral_codes
-    WHERE owner_id = $1
+  getWaitlistShareCodeByOwner: `
+    SELECT referral_share_code AS code
+    FROM waitlist_signups
+    WHERE id = $1
     LIMIT 1
   `,
 
-  findReferralCode: `
+  /** Lookup waitlist share code (for validation / milestone). */
+  findWaitlistShareCode: `
     SELECT
-      rc.code,
-      rc.click_count,
-      rc.signup_count,
-      rc.is_active,
-      ws.email   AS owner_email,
-      ws.id      AS owner_id
-    FROM referral_codes rc
-    JOIN waitlist_signups ws ON ws.id = rc.owner_id
-    WHERE rc.code = $1
+      ws.referral_share_code AS code,
+      ws.email AS owner_email,
+      ws.id AS owner_id,
+      TRUE AS is_active,
+      (SELECT COUNT(*)::int FROM waitlist_signups x
+       WHERE UPPER(TRIM(x.ref_code_used)) = UPPER(TRIM(ws.referral_share_code))) AS signup_count
+    FROM waitlist_signups ws
+    WHERE UPPER(TRIM(ws.referral_share_code)) = UPPER(TRIM($1))
     LIMIT 1
   `,
 
-  findOwnerByReferralCode: `
+  findOwnerByShareCode: `
     SELECT ws.id AS referred_by_id
-    FROM referral_codes rc
-    JOIN waitlist_signups ws ON ws.id = rc.owner_id
-    WHERE rc.code = $1
-      AND rc.is_active = TRUE
+    FROM waitlist_signups ws
+    WHERE UPPER(TRIM(ws.referral_share_code)) = UPPER(TRIM($1))
     LIMIT 1
   `,
 
-  incrementReferralClick: `
-    UPDATE referral_codes
-    SET click_count = click_count + 1
-    WHERE code = $1
+  countSignupsUsingRefCode: `
+    SELECT COUNT(*)::int AS c
+    FROM waitlist_signups
+    WHERE UPPER(TRIM(ref_code_used)) = UPPER(TRIM($1))
   `,
 
-  incrementReferralSignup: `
-    UPDATE referral_codes
-    SET signup_count = signup_count + 1
-    WHERE code = $1
+  /** True if code is taken on waitlist or mobile `users.referral_code`. */
+  isReferralCodeTaken: `
+    SELECT (
+      EXISTS (
+        SELECT 1 FROM waitlist_signups
+        WHERE referral_share_code IS NOT NULL
+          AND UPPER(TRIM(referral_share_code)) = UPPER(TRIM($1))
+      )
+      OR EXISTS (
+        SELECT 1 FROM users
+        WHERE referral_code IS NOT NULL
+          AND UPPER(TRIM(referral_code)) = UPPER(TRIM($1))
+      )
+    ) AS taken
   `,
 
   // ── Product content ─────────────────────────────────────────────────────────

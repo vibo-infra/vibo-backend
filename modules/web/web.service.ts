@@ -58,21 +58,22 @@ export const joinWaitlist = async (input: JoinWaitlistInput) => {
     referredBy:  referredById,
   });
 
-  // Generate unique referral code — retry up to 5x on collision
   const code = await generateUniqueCode(input.email);
-  await webRepository.insertReferralCode(code, signup.id);
+  await webRepository.setWaitlistShareCode(code, signup.id);
 
-  // If came via ref, increment the referrer's signup count
-  // and trigger milestone email if they've hit the threshold
   if (input.ref) {
-    await webRepository.incrementReferralSignup(input.ref);
-    const refRow = await webRepository.findReferralCode(input.ref);
-    if (refRow && refRow.signup_count + 1 >= REFERRAL_MILESTONE) {
-      email.sendReferralMilestone({
-        to:           refRow.owner_email,
-        referralCode: refRow.code,
-        count:        refRow.signup_count + 1,
-      }).catch(err => console.error('[email] referral milestone failed:', err));
+    const count = await webRepository.countSignupsUsingRefCode(input.ref);
+    if (count >= REFERRAL_MILESTONE) {
+      const refRow = await webRepository.findReferralCode(input.ref);
+      if (refRow) {
+        email
+          .sendReferralMilestone({
+            to: refRow.owner_email,
+            referralCode: refRow.code,
+            count,
+          })
+          .catch((err) => console.error('[email] referral milestone failed:', err));
+      }
     }
   }
 
@@ -132,27 +133,6 @@ export const convertSignup = async (input: ConvertSignupInput) => {
   const row = await webRepository.convertSignup(input.email, input.user_id);
   if (!row) throw new Error('WAITLIST_SIGNUP_NOT_FOUND');
   return { converted: true };
-};
-
-// ── Referral ──────────────────────────────────────────────────────────────────
-
-export const getReferralCode = async (code: string) => {
-  const row = await webRepository.findReferralCode(code.toUpperCase());
-  if (!row || !row.is_active) return null;
-
-  // Best-effort first name from email prefix
-  const raw = row.owner_email.split('@')[0].replace(/[^a-zA-Z]/g, '');
-  const displayName = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
-
-  return {
-    valid:        true,
-    owner_name:   displayName,
-    signup_count: row.signup_count,
-  };
-};
-
-export const recordReferralClick = async (code: string) => {
-  await webRepository.incrementReferralClick(code.toUpperCase());
 };
 
 // ── Content ───────────────────────────────────────────────────────────────────
@@ -610,8 +590,8 @@ export const sendEmailBatch = async (input: SendEmailBatchInput) => {
 const generateUniqueCode = async (email: string): Promise<string> => {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateReferralCode(email);
-    const existing = await webRepository.findReferralCode(code);
-    if (!existing) return code;
+    const taken = await webRepository.isReferralCodeTaken(code);
+    if (!taken) return code;
   }
   throw new Error('REFERRAL_CODE_COLLISION');
 };

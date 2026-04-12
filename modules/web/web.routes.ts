@@ -10,10 +10,6 @@ router.get(   '/waitlist/count',    webController.getWaitlistCount);
 router.patch( '/waitlist/city',     webController.updateWaitlistCity);
 router.patch( '/waitlist/convert',  internalOnly, webController.convertSignup);
 
-// ── Referral ──────────────────────────────────────────────────────────────────
-// router.get(  '/referral/:code',     webController.getReferralCode);
-// router.post( '/referral/click',     webController.referralClick);
-
 // ── Dynamic content ───────────────────────────────────────────────────────────
 router.get(  '/content',            webController.getContent);
 router.get(  '/content/:key',       webController.getContentByKey);

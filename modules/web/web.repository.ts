@@ -85,34 +85,36 @@ export const getWaitlistConfirmationDataByEmail = async (email: string) => {
   return r ?? null;
 };
 
-// ── Referral ──────────────────────────────────────────────────────────────────
+// ── Waitlist share code (web) — stored on `waitlist_signups.referral_share_code` ──
 
-export const insertReferralCode = async (code: string, ownerId: string) => {
-  const { rows } = await pool.query(webQueries.insertReferralCode, [code, ownerId]);
-  return rows[0];
+export const setWaitlistShareCode = async (code: string, signupId: string) => {
+  const { rows } = await pool.query(webQueries.setWaitlistShareCode, [code, signupId]);
+  return rows[0] ?? null;
 };
 
 export const getReferralCodeByOwner = async (ownerId: string) => {
-  const { rows } = await pool.query(webQueries.getReferralCodeByOwner, [ownerId]);
+  const { rows } = await pool.query(webQueries.getWaitlistShareCodeByOwner, [ownerId]);
   return rows[0] ?? null;
 };
 
 export const findReferralCode = async (code: string) => {
-  const { rows } = await pool.query(webQueries.findReferralCode, [code]);
+  const { rows } = await pool.query(webQueries.findWaitlistShareCode, [code]);
   return rows[0] ?? null;
 };
 
 export const findOwnerByReferralCode = async (code: string) => {
-  const { rows } = await pool.query(webQueries.findOwnerByReferralCode, [code]);
+  const { rows } = await pool.query(webQueries.findOwnerByShareCode, [code]);
   return rows[0] ?? null;
 };
 
-export const incrementReferralClick = async (code: string) => {
-  await pool.query(webQueries.incrementReferralClick, [code]);
+export const countSignupsUsingRefCode = async (code: string) => {
+  const { rows } = await pool.query(webQueries.countSignupsUsingRefCode, [code]);
+  return Number((rows[0] as { c: number } | undefined)?.c ?? 0);
 };
 
-export const incrementReferralSignup = async (code: string) => {
-  await pool.query(webQueries.incrementReferralSignup, [code]);
+export const isReferralCodeTaken = async (code: string) => {
+  const { rows } = await pool.query(webQueries.isReferralCodeTaken, [code]);
+  return Boolean((rows[0] as { taken: boolean } | undefined)?.taken);
 };
 
 // ── Content ───────────────────────────────────────────────────────────────────

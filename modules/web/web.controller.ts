@@ -72,27 +72,6 @@ export const convertSignup = async (req: Request, res: Response) => {
   }
 };
 
-// ── Referral ───────────────────────────────────────────────────────────────  ───
-
-export const getReferralCode = async (req: Request, res: Response) => {
-  try {
-    const result = await webService.getReferralCode(req.params.code as string);
-    if (!result) return res.status(404).json({ success: false, message: 'Invalid referral code' });
-    return res.status(200).json({ success: true, data: result });
-  } catch {
-    return res.status(500).json({ error: 'Something went wrong' });
-  }
-};
-
-export const referralClick = async (req: Request, res: Response) => {
-  // Respond immediately — update happens after
-  res.status(200).json({ success: true });
-  const code = req.body.code;
-  if (code && typeof code === 'string') {
-    webService.recordReferralClick(code).catch(() => {});
-  }
-};
-
 // ── Content ───────────────────────────────────────────────────────────────────
 
 export const getContent = async (req: Request, res: Response) => {

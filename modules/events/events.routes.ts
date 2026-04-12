@@ -6,6 +6,9 @@ const router = Router();
 
 router.get('/categories', eventsController.listCategories);
 
+/** Prefer this path in clients — avoids `/me/...` being mishandled by proxies or mistaken for `/:id`. */
+router.get('/upcoming', authenticate, eventsController.getMyUpcomingEvents);
+
 router.get('/me/upcoming', authenticate, eventsController.getMyUpcomingEvents);
 
 router.get('/', eventsController.getEventsByLocation);
