@@ -6,20 +6,41 @@ export const FIND_USER_BY_EMAIL = `
     is_verified,
     is_active,
     banned_at,
-    ban_reason
+    ban_reason,
+    created_at
   FROM users
   WHERE email = $1
 `;
 
 export const CREATE_USER = `
-  INSERT INTO users (email, hashed_password, accepted_tos_at)
-  VALUES ($1, $2, NOW())
+  INSERT INTO users (email, hashed_password, accepted_tos_at, default_city, referred_by_user_id)
+  VALUES ($1, $2, NOW(), $3, $4)
   RETURNING
     user_id,
     email,
     is_verified,
     is_active,
     created_at
+`;
+
+export const FIND_USER_ID_BY_REFERRAL_CODE = `
+  SELECT user_id FROM users
+  WHERE referral_code IS NOT NULL
+    AND lower(referral_code) = lower(trim($1::text))
+  LIMIT 1
+`;
+
+export const SET_USER_REFERRAL_CODE = `
+  UPDATE users
+  SET referral_code = $2, updated_at = NOW()
+  WHERE user_id = $1 AND referral_code IS NULL
+  RETURNING user_id
+`;
+
+export const CREATE_PROFILE = `
+  INSERT INTO profile (user_id, first_name)
+  VALUES ($1, $2)
+  ON CONFLICT (user_id) DO NOTHING
 `;
 
 export const CREATE_SESSION = `

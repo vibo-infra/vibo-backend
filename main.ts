@@ -3,6 +3,10 @@ import cors from "cors";
 // import dotenv from "dotenv";
 import authRoutes from "./modules/auth";
 import eventsRoutes from "./modules/events";
+import usersRoutes from "./modules/users";
+import notificationsRoutes from "./modules/notifications";
+import sparkRoutes from "./modules/spark";
+import profileRoutes from "./modules/profile";
 import { analyticsRouter } from "./modules/analytics";
 import { webRouter } from "./modules/web";
 import { ALLOWED_ORIGINS } from "./config/allowOrigin";
@@ -79,6 +83,10 @@ app.get('/health', (req, res) => {
 });
 app.use('/v0/api/auth', authRoutes);
 app.use('/v0/api/events', eventsRoutes);
+app.use('/v0/api/users', usersRoutes);
+app.use('/v0/api/notifications', notificationsRoutes);
+app.use('/v0/api/sparks', sparkRoutes);
+app.use('/v0/api/profile', profileRoutes);
 
 app.use('/v0/api/web',       webRouter);
 app.use('/v0/api/analytics', analyticsRouter);

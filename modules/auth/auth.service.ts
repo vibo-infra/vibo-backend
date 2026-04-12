@@ -5,6 +5,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import * as authRepository from './auth.repository';
+import * as usersService from '../users/users.service';
+import type { PublicAuthUser } from '../users/users.service';
+import { tryGrantReferralBonus } from './referralBonus.service';
 import crypto from 'node:crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -12,14 +15,57 @@ const SALT_ROUNDS = 12;
 const ACCESS_TOKEN_MINUTES = 15;
 const REFRESH_TOKEN_DAYS = 30;
 
-export const register = async (params: { email: string; password: string }) => {
+const publicAuthFallback = (
+  userId: string,
+  email: string,
+  isVerified: boolean
+): PublicAuthUser => ({
+  userId,
+  email,
+  isVerified,
+  sparkBalance: 0,
+  defaultCity: null,
+  firstName: null,
+  unlimitedHostingUntil: null,
+  pushNotificationsEnabled: true,
+  inAppNotificationsEnabled: true,
+  waitlistTier: null,
+  waitlistHostingDiscountUntil: null,
+  sparkWelcomePaidHostingsUsed: 0,
+  referralCode: null,
+  appPreferences: { showUpcomingOnHome: true, showHappeningSoonOnHome: true },
+});
+
+export const register = async (params: {
+  email: string;
+  password: string;
+  defaultCity: string;
+  firstName?: string;
+  referralCode?: string;
+}) => {
   const existing = await authRepository.findUserByEmail(params.email);
   if (existing) throw new Error('EMAIL_ALREADY_EXISTS');
 
-  const hashedPassword = await bcrypt.hash(params.password, SALT_ROUNDS);
-  const user = await authRepository.createUser(params.email, hashedPassword);
+  const city = String(params.defaultCity ?? '').trim();
+  if (!city) throw new Error('DEFAULT_CITY_REQUIRED');
 
-  // Generate tokens exactly like login does
+  const referredByUserId: string | null = await authRepository.findReferrerUserIdByCode(
+    params.referralCode
+  );
+
+  const hashedPassword = await bcrypt.hash(params.password, SALT_ROUNDS);
+  const user = await authRepository.createUser({
+    email: params.email.trim(),
+    hashedPassword,
+    defaultCity: city,
+    firstName: params.firstName?.trim() || params.email.split('@')[0] || 'Guest',
+    referredByUserId,
+  });
+
+  if (referredByUserId) {
+    void tryGrantReferralBonus(referredByUserId, user.user_id);
+  }
+
   const { accessToken, refreshToken, accessExpiresAt, refreshExpiresAt } =
     generateTokens(user.user_id, user.email);
 
@@ -33,15 +79,14 @@ export const register = async (params: { email: string; password: string }) => {
     refreshTokenExpiresAt: refreshExpiresAt,
   });
 
+  await usersService.applyPostAuthGrants(user.user_id);
+  const publicUser = await usersService.getPublicAuthUser(user.user_id);
+
   return {
     accessToken: session.token,
     refreshToken: session.refresh_token,
     expiresAt: session.expires_at,
-    user: {
-      userId: user.user_id,
-      email: user.email,
-      isVerified: user.is_verified,
-    },
+    user: publicUser ?? publicAuthFallback(user.user_id, user.email, user.is_verified),
   };
 };
 
@@ -91,15 +136,14 @@ export const login = async (params: {
     refreshTokenExpiresAt: refreshExpiresAt,
   });
 
+  await usersService.applyPostAuthGrants(user.user_id);
+  const publicUser = await usersService.getPublicAuthUser(user.user_id);
+
   return {
     accessToken: session.token,
     refreshToken: session.refresh_token,
     expiresAt: session.expires_at,
-    user: {
-      userId: user.user_id,
-      email: user.email,
-      isVerified: user.is_verified,
-    },
+    user: publicUser ?? publicAuthFallback(user.user_id, user.email, user.is_verified),
   };
 };
 
@@ -128,10 +172,14 @@ export const refresh = async (incomingRefreshToken: string) => {
 
   if (!updated) throw new Error('INVALID_REFRESH_TOKEN');
 
+  await usersService.applyPostAuthGrants(session.user_id);
+  const publicUser = await usersService.getPublicAuthUser(session.user_id);
+
   return {
     accessToken: updated.token,
     refreshToken: updated.refresh_token,
     expiresAt: updated.expires_at,
+    user: publicUser ?? publicAuthFallback(session.user_id, session.email, false),
   };
 };
 

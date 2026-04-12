@@ -201,14 +201,21 @@ export const getHelpArticle = async (slug: string) => {
 
 // ── Events nearby ─────────────────────────────────────────────────────────────
 
+const NEARBY_EVENTS_MAX_LIMIT = 100;
+
 export const getNearbyEvents = async (
   city: string,
   limit: number,
   category?: string,
 ) => {
+  const n = Number(limit);
+  const safeLimit = Math.min(
+    Math.max(Number.isFinite(n) && n > 0 ? Math.floor(n) : 20, 1),
+    NEARBY_EVENTS_MAX_LIMIT
+  );
   const rows = await webRepository.getNearbyEvents({
     city,
-    limit:    Math.min(limit, 12),
+    limit: safeLimit,
     category: category ?? null,
   });
 

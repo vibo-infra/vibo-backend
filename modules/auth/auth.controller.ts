@@ -7,18 +7,30 @@ import * as authService from './auth.service';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, defaultCity, firstName, referralCode } = req.body ?? {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
+    if (!defaultCity || !String(defaultCity).trim()) {
+      return res.status(400).json({ error: 'defaultCity is required at signup' });
+    }
 
-    const result = await authService.register({ email, password });
+    const result = await authService.register({
+      email,
+      password,
+      defaultCity: String(defaultCity),
+      firstName: firstName !== undefined ? String(firstName) : undefined,
+      referralCode: referralCode !== undefined ? String(referralCode) : undefined,
+    });
     return res.status(201).json(result);
 
   } catch (err: any) {
     if (err.message === 'EMAIL_ALREADY_EXISTS') {
       return res.status(409).json({ error: 'Email is already in use' });
+    }
+    if (err.message === 'DEFAULT_CITY_REQUIRED') {
+      return res.status(400).json({ error: 'defaultCity is required at signup' });
     }
     return res.status(500).json({ error: 'Something went wrong' });
   }

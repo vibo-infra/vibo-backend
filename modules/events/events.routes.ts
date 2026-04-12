@@ -4,11 +4,17 @@ import * as eventsController from './events.controller';
 
 const router = Router();
 
-// Public — anyone can browse events
-router.get('/',     eventsController.getEventsByLocation);
-router.get('/:id',  eventsController.getEventById);
+router.get('/categories', eventsController.listCategories);
 
-// Protected — must be logged in to host
+router.get('/me/upcoming', authenticate, eventsController.getMyUpcomingEvents);
+
+router.get('/', eventsController.getEventsByLocation);
+
+router.get('/:id/reviews', eventsController.getEventReviews);
+router.post('/:id/reviews', authenticate, eventsController.postEventReview);
+
+router.get('/:id', eventsController.getEventById);
+
 router.post('/', authenticate, eventsController.createEvent);
 
 export default router;

@@ -11,8 +11,8 @@ router.patch( '/waitlist/city',     webController.updateWaitlistCity);
 router.patch( '/waitlist/convert',  internalOnly, webController.convertSignup);
 
 // ── Referral ──────────────────────────────────────────────────────────────────
-router.get(  '/referral/:code',     webController.getReferralCode);
-router.post( '/referral/click',     webController.referralClick);
+// router.get(  '/referral/:code',     webController.getReferralCode);
+// router.post( '/referral/click',     webController.referralClick);
 
 // ── Dynamic content ───────────────────────────────────────────────────────────
 router.get(  '/content',            webController.getContent);
@@ -25,8 +25,8 @@ router.get(  '/faqs',               webController.getFaqs);
 router.get(  '/tnc',                webController.getTnc);
 
 // ── Help ──────────────────────────────────────────────────────────────────────
-router.get(  '/help',               webController.getHelpArticles);
-router.get(  '/help/:slug',         webController.getHelpArticle);
+// router.get(  '/help',               webController.getHelpArticles);
+// router.get(  '/help/:slug',         webController.getHelpArticle);
 
 // ── Events nearby ─────────────────────────────────────────────────────────────
 router.get(  '/events/nearby',      webController.getNearbyEvents);

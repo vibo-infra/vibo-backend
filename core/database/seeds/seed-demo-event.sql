@@ -37,8 +37,8 @@ loc AS (
     'Maharashtra',
     'IN',
     NULL,
-    19.2144::numeric,
-    72.9106::numeric
+    19.2236::numeric,
+    72.8841::numeric
   FROM ready
   RETURNING location_id
 )
