@@ -27,6 +27,11 @@ out/
 !.env.dev.example
 !.env.production.example
 
+# Firebase Admin SDK private keys (never commit)
+google-service-account.json
+google-firebase-service-key.json
+*-firebase-adminsdk-*.json
+
 # ========================
 # Logs
 # ========================

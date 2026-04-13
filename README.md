@@ -4,6 +4,19 @@ Node/Express API with PostgreSQL. Entry: `main.ts`.
 
 **Route map & consumer notes:** [docs/HTTP_API.md](./docs/HTTP_API.md).
 
+### Push (FCM server)
+
+Set **one** of:
+
+- `FIREBASE_SERVICE_ACCOUNT_PATH` — path to the Firebase service account JSON (file not committed), or  
+- `FIREBASE_SERVICE_ACCOUNT_JSON` — raw JSON string (e.g. secret manager).
+
+Without these, in-app notifications still work; device push is skipped until configured.
+
+**Sparks low push:** optional `SPARKS_LOW_PUSH_THRESHOLD` (default `50`) — when a paid listing debit drops the host’s balance from above this value to at or below it, they get one `sparks_low` notification.
+
+**Event start reminders (host):** call internal `POST /v0/api/web/jobs/event-reminders` on a schedule (e.g. every 10–15 minutes) with header `x-internal-key`. Sends **24h** and **1h** before `start_time` for published events (deduped in `event_reminder_push_sent` — run migration first).
+
 ## Database migrations
 
 Set `POSTGRES_SUPABASE_DB_URL` (or your Postgres URL) in `.env`, then:

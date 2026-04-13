@@ -5,6 +5,9 @@ import {
   MARK_NOTIFICATION_READ,
   UPSERT_PUSH_TOKEN,
   LIST_PUSH_TOKENS_FOR_USER,
+  DELETE_PUSH_TOKEN_FOR_USER,
+  DELETE_PUSH_TOKENS_BY_VALUE,
+  COUNT_NOTIFICATIONS_DATA_CONTAINS_SINCE_DAYS,
 } from './notifications.queries';
 
 export const insertNotification = async (params: {
@@ -40,4 +43,27 @@ export const upsertPushToken = async (userId: string, token: string, platform: s
 export const listPushTokens = async (userId: string) => {
   const { rows } = await pool.query(LIST_PUSH_TOKENS_FOR_USER, [userId]);
   return rows as { token: string; platform: string }[];
+};
+
+export const deletePushTokenForUser = async (userId: string, token: string) => {
+  await pool.query(DELETE_PUSH_TOKEN_FOR_USER, [userId, token]);
+};
+
+export const deletePushTokensByValue = async (tokens: string[]) => {
+  if (!tokens.length) return;
+  await pool.query(DELETE_PUSH_TOKENS_BY_VALUE, [tokens]);
+};
+
+export const countNotificationsDataContainsSinceDays = async (
+  userId: string,
+  dataSubset: Record<string, unknown>,
+  days: number
+): Promise<number> => {
+  const { rows } = await pool.query(COUNT_NOTIFICATIONS_DATA_CONTAINS_SINCE_DAYS, [
+    userId,
+    JSON.stringify(dataSubset),
+    days,
+  ]);
+  const r = rows[0] as { c: number } | undefined;
+  return r?.c ?? 0;
 };

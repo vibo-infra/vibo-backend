@@ -8,6 +8,7 @@ import * as authRepository from './auth.repository';
 import * as usersService from '../users/users.service';
 import type { PublicAuthUser } from '../users/users.service';
 import { tryGrantReferralBonus } from './referralBonus.service';
+import { maybeNotifyVerificationNudge } from '../notifications/pushTriggers';
 import { assertAllowedDefaultCity } from '../app-config/onboardingCities.service';
 import crypto from 'node:crypto';
 
@@ -84,6 +85,11 @@ export const register = async (params: {
   await usersService.applyPostAuthGrants(user.user_id);
   const publicUser = await usersService.getPublicAuthUser(user.user_id);
 
+  void maybeNotifyVerificationNudge(user.user_id, {
+    emailVerified: Boolean(user.is_verified),
+    identityVerifiedAt: null,
+  });
+
   return {
     accessToken: session.token,
     refreshToken: session.refresh_token,
@@ -141,6 +147,11 @@ export const login = async (params: {
   await usersService.applyPostAuthGrants(user.user_id);
   const publicUser = await usersService.getPublicAuthUser(user.user_id);
 
+  void maybeNotifyVerificationNudge(user.user_id, {
+    emailVerified: Boolean(user.is_verified),
+    identityVerifiedAt: user.identity_verified_at ?? null,
+  });
+
   return {
     accessToken: session.token,
     refreshToken: session.refresh_token,
@@ -177,11 +188,18 @@ export const refresh = async (incomingRefreshToken: string) => {
   await usersService.applyPostAuthGrants(session.user_id);
   const publicUser = await usersService.getPublicAuthUser(session.user_id);
 
+  void maybeNotifyVerificationNudge(session.user_id, {
+    emailVerified: Boolean(session.is_verified),
+    identityVerifiedAt: session.identity_verified_at ?? null,
+  });
+
   return {
     accessToken: updated.token,
     refreshToken: updated.refresh_token,
     expiresAt: updated.expires_at,
-    user: publicUser ?? publicAuthFallback(session.user_id, session.email, false),
+    user:
+      publicUser ??
+      publicAuthFallback(session.user_id, session.email, Boolean(session.is_verified)),
   };
 };
 

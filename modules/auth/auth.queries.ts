@@ -4,6 +4,7 @@ export const FIND_USER_BY_EMAIL = `
     email,
     hashed_password,
     is_verified,
+    identity_verified_at,
     is_active,
     banned_at,
     ban_reason,
@@ -84,7 +85,9 @@ export const FIND_SESSION_BY_REFRESH_TOKEN = `
     s.refresh_token_expires_at,
     u.is_active,
     u.banned_at,
-    u.email
+    u.email,
+    u.is_verified,
+    u.identity_verified_at
   FROM session s
   JOIN users u ON u.user_id = s.user_id
   WHERE s.refresh_token = $1

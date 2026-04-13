@@ -42,3 +42,17 @@ export const registerDevice = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Failed to register device' });
   }
 };
+
+export const unregisterDevice = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body ?? {};
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'token is required' });
+    }
+    await notificationsService.unregisterDevice(req.user.userId, token.trim());
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to unregister device' });
+  }
+};

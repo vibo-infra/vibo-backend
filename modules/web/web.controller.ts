@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as webService from './web.service';
 import * as analyticsService from '../analytics/analytics.service';
+import { runEventHostStartReminders } from '../notifications/eventReminders.service';
 import type { SendEmailBatchInput } from './web.types';
 
 // ── Waitlist ──────────────────────────────────────────────────────────────────
@@ -209,6 +210,17 @@ export const notifyCity = async (req: Request, res: Response) => {
  * POST /v0/api/web/email/send-batch
  * Personalised batch sends + DB logs (email_send_logs). Requires x-internal-key.
  */
+/** Internal cron: FCM + in-app reminders for hosts before event start. */
+export const runEventReminders = async (_req: Request, res: Response) => {
+  try {
+    const data = await runEventHostStartReminders();
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error('[web] runEventReminders error:', err);
+    return res.status(500).json({ error: 'Something went wrong' });
+  }
+};
+
 export const sendEmailBatch = async (req: Request, res: Response) => {
   try {
     const body = req.body as SendEmailBatchInput | undefined;

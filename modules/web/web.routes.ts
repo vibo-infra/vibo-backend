@@ -31,5 +31,6 @@ router.get(  '/events/nearby',      webController.getNearbyEvents);
 // ── City launch email (internal) ──────────────────────────────────────────────
 router.post( '/email/notify-city',  internalOnly, webController.notifyCity);
 router.post( '/email/send-batch',   internalOnly, webController.sendEmailBatch);
+router.post( '/jobs/event-reminders', internalOnly, webController.runEventReminders);
 
 export default router;

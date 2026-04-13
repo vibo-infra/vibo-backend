@@ -58,7 +58,8 @@ Base path: **`/v0/api`**. Unless noted, JSON request/response bodies use `Conten
 |----------------|------|----------------|
 | `GET /` | Bearer | In-app notification list. |
 | `PATCH /:id/read` | Bearer | Mark read. |
-| `POST /register-device` | Bearer | Push token registration (RN). |
+| `POST /register-device` | Bearer | FCM device token registration (RN). |
+| `POST /unregister-device` | Bearer | Body `{ "token" }` — remove token on logout / push off. |
 
 ---
 
@@ -83,6 +84,7 @@ Base path: **`/v0/api`**. Unless noted, JSON request/response bodies use `Conten
 | `GET /faqs`, `GET /tnc` | No | FAQ + Terms (web). |
 | `GET /events/nearby` | No | Public map / marketing nearby events. |
 | `POST /email/notify-city`, `POST /email/send-batch` | Internal key | Ops / blast emails only. |
+| `POST /jobs/event-reminders` | Internal key | Cron: host push **~24h** and **~1h** before published `event.start_time` (deduped). Schedule every ~10–15 min. |
 
 ---
 

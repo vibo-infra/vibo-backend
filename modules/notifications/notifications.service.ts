@@ -2,6 +2,8 @@ import * as notificationsRepository from './notifications.repository';
 import { findAuthUserPayload } from '../users/users.repository';
 import { dispatchPushToUser } from './pushDispatch';
 
+export { dispatchPushToTopic } from './pushDispatch';
+
 export const createInAppNotification = async (params: {
   userId: string;
   title: string;
@@ -36,4 +38,8 @@ export const registerDevice = async (
   platform: 'ios' | 'android' | 'web'
 ) => {
   return notificationsRepository.upsertPushToken(userId, token, platform);
+};
+
+export const unregisterDevice = async (userId: string, token: string) => {
+  await notificationsRepository.deletePushTokenForUser(userId, token);
 };

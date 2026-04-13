@@ -30,3 +30,21 @@ export const UPSERT_PUSH_TOKEN = `
 export const LIST_PUSH_TOKENS_FOR_USER = `
   SELECT token, platform FROM user_push_token WHERE user_id = $1
 `;
+
+export const DELETE_PUSH_TOKEN_FOR_USER = `
+  DELETE FROM user_push_token WHERE user_id = $1 AND token = $2
+`;
+
+export const DELETE_PUSH_TOKENS_BY_VALUE = `
+  DELETE FROM user_push_token WHERE token = ANY($1::text[])
+`;
+
+/** Dedupe nudges: `data` must be a JSON object subset, e.g. {"type":"verification","focus":"email"}. */
+export const COUNT_NOTIFICATIONS_DATA_CONTAINS_SINCE_DAYS = `
+  SELECT COUNT(*)::int AS c
+  FROM notification
+  WHERE user_id = $1
+    AND data IS NOT NULL
+    AND data @> $2::jsonb
+    AND created_at > NOW() - ($3::double precision * INTERVAL '1 day')
+`;

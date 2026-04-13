@@ -18,6 +18,8 @@ import {
   type WaitlistTier,
 } from '../hosting/paidHostingCost';
 import * as notificationsService from '../notifications/notifications.service';
+import { PushPayloadType } from '../notifications/pushPayload';
+import { notifySparksLowIfCrossedThreshold } from '../notifications/pushTriggers';
 
 const parseWaitlistTier = (v: unknown): WaitlistTier => {
   if (v === 'tier1' || v === 'tier2') return v;
@@ -109,12 +111,13 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
     }
 
     let hostingTxId: string | undefined;
+    let balanceAfterSparkDebit: number | undefined;
     if (sparkCost > 0) {
       const insufficientMessage = buildPaidHostingInsufficientMessage(
         sparkCost,
         paidPricingReason
       );
-      const { transactionId } = await applyDeltaWithClient(client, {
+      const { transactionId, balanceAfter } = await applyDeltaWithClient(client, {
         userId: hostId,
         amount: -sparkCost,
         reason: 'paid_event_hosting',
@@ -122,6 +125,7 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
         insufficientMessage,
       });
       hostingTxId = transactionId;
+      balanceAfterSparkDebit = balanceAfter;
     }
 
     const location = await eventsRepository.createLocationWithClient(client, body.location);
@@ -163,12 +167,17 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
 
     await client.query('COMMIT');
 
+    if (sparkCost > 0 && balanceAfterSparkDebit !== undefined) {
+      const balanceBefore = balanceAfterSparkDebit + sparkCost;
+      void notifySparksLowIfCrossedThreshold(hostId, balanceBefore, balanceAfterSparkDebit);
+    }
+
     if (status === 'published') {
       await notificationsService.createInAppNotification({
         userId: hostId,
         title: 'Event published',
         body: `${event.event_name} is live for nearby members.`,
-        data: { type: 'event_published', eventId: event.event_id },
+        data: { type: PushPayloadType.eventPublished, eventId: event.event_id },
       });
     }
 
