@@ -10,6 +10,8 @@ import {
   UPSERT_EVENT_REVIEW,
   LIST_EVENT_REVIEWS,
   LIST_MY_UPCOMING_HOSTED_EVENTS,
+  DELETE_EVENT_LIKE,
+  INSERT_EVENT_LIKE,
 } from './events.queries';
 
 type LocationInput = {
@@ -89,6 +91,7 @@ export const getEventsByLocation = async (params: {
   offset: number;
   city?: string | null;
   categoryId?: string | null;
+  viewerUserId?: string | null;
 }) => {
   const city = params.city?.trim() ? params.city.trim() : null;
   const categoryId = params.categoryId?.trim() ? params.categoryId.trim() : null;
@@ -100,6 +103,7 @@ export const getEventsByLocation = async (params: {
     params.offset,
     city,
     categoryId,
+    params.viewerUserId ?? null,
   ]);
   return rows;
 };
@@ -109,9 +113,18 @@ export const listMyUpcomingHostedEvents = async (hostId: string) => {
   return rows;
 };
 
-export const getEventById = async (eventId: string) => {
-  const { rows } = await pool.query(GET_EVENT_BY_ID, [eventId]);
+export const getEventById = async (eventId: string, viewerUserId: string | null = null) => {
+  const { rows } = await pool.query(GET_EVENT_BY_ID, [eventId, viewerUserId]);
   return rows[0] ?? null;
+};
+
+export const toggleEventLike = async (eventId: string, userId: string): Promise<boolean> => {
+  const del = await pool.query(DELETE_EVENT_LIKE, [eventId, userId]);
+  if (del.rowCount && del.rowCount > 0) {
+    return false;
+  }
+  const ins = await pool.query(INSERT_EVENT_LIKE, [eventId, userId]);
+  return (ins.rowCount ?? 0) > 0;
 };
 
 export const createLocationWithClient = (client: PoolClient, data: LocationInput) =>

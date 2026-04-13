@@ -6,7 +6,6 @@ import eventsRoutes from "./modules/events";
 import usersRoutes from "./modules/users";
 import notificationsRoutes from "./modules/notifications";
 import sparkRoutes from "./modules/spark";
-import profileRoutes from "./modules/profile";
 import { analyticsRouter } from "./modules/analytics";
 import configRoutes from "./modules/config";
 import { webRouter } from "./modules/web";
@@ -87,7 +86,6 @@ app.use('/v0/api/events', eventsRoutes);
 app.use('/v0/api/users', usersRoutes);
 app.use('/v0/api/notifications', notificationsRoutes);
 app.use('/v0/api/sparks', sparkRoutes);
-app.use('/v0/api/profile', profileRoutes);
 
 app.use('/v0/api/config',    configRoutes);
 app.use('/v0/api/web',       webRouter);

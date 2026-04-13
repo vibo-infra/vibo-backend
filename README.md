@@ -2,6 +2,8 @@
 
 Node/Express API with PostgreSQL. Entry: `main.ts`.
 
+**Route map & consumer notes:** [docs/HTTP_API.md](./docs/HTTP_API.md).
+
 ## Database migrations
 
 Set `POSTGRES_SUPABASE_DB_URL` (or your Postgres URL) in `.env`, then:
@@ -28,7 +30,7 @@ This is independent of the **web waitlist** share link (see below).
 ### API
 
 - **Register with a code:** `POST /v0/api/auth/register` body includes `referralCode` (optional) plus required `email`, `password`, `defaultCity`.
-- **Who referred me / my code:** Returned on `GET /v0/api/users/me` as `referralCode` and internal `referred_by_user_id` is not exposed in the public payload (only the code you can share).
+- **Who referred me / my code:** Returned on `GET /v0/api/users/me` as `referralCode` and internal `referred_by_user_id` is not exposed in the public payload (only the code you can share). Full display profile (avatar, bio, last name) lives under **`GET /v0/api/users/me/profile`** (see [docs/HTTP_API.md](./docs/HTTP_API.md)).
 
 ### Implementation files
 

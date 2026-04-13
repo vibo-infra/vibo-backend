@@ -81,6 +81,7 @@ export const getEventsByLocation = async (req: Request, res: Response) => {
       limit: limit ? parseInt(limit as string, 10) : undefined,
       city: city !== undefined && city !== null ? String(city) : null,
       categoryId: categoryId !== undefined && categoryId !== null ? String(categoryId) : null,
+      viewerUserId: req.viewerUserId ?? null,
     });
 
     return res.status(200).json(result);
@@ -102,11 +103,27 @@ export const getMyUpcomingEvents = async (req: Request, res: Response) => {
 
 export const getEventById = async (req: Request, res: Response) => {
   try {
-    const event = await eventsRepository.getEventById(req.params.id as string);
+    const event = await eventsRepository.getEventById(
+      req.params.id as string,
+      req.viewerUserId ?? null,
+    );
     if (!event) return res.status(404).json({ error: 'Event not found' });
     return res.status(200).json({ event });
   } catch {
     return res.status(500).json({ error: 'Failed to fetch event' });
+  }
+};
+
+export const toggleEventLike = async (req: Request, res: Response) => {
+  try {
+    const { liked } = await eventsService.toggleEventLike(req.user.userId, req.params.id as string);
+    return res.status(200).json({ liked });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message === 'EVENT_NOT_FOUND') {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update save' });
   }
 };
 

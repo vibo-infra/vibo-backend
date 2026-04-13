@@ -1,7 +1,7 @@
-import * as profileRepository from './profile.repository';
-import type { ProfileRow } from './profile.repository';
+import * as userProfileRepository from './userProfile.repository';
+import type { UserProfileRow } from './userProfile.repository';
 
-export type PublicProfile = {
+export type PublicUserProfile = {
   userId: string;
   firstName: string;
   lastName: string | null;
@@ -11,7 +11,7 @@ export type PublicProfile = {
   updatedAt: string;
 };
 
-function toPublic(row: ProfileRow): PublicProfile {
+function toPublic(row: UserProfileRow): PublicUserProfile {
   return {
     userId: row.user_id,
     firstName: row.first_name,
@@ -23,24 +23,26 @@ function toPublic(row: ProfileRow): PublicProfile {
   };
 }
 
-export const getProfile = async (userId: string) => {
-  const row = await profileRepository.findProfileByUserId(userId);
+export const getUserProfile = async (userId: string) => {
+  await userProfileRepository.ensureUserProfileRow(userId);
+  const row = await userProfileRepository.findUserProfileByUserId(userId);
   if (!row) return null;
-  return toPublic(row as ProfileRow);
+  return toPublic(row as UserProfileRow);
 };
 
-export type PatchProfileInput = {
+export type PatchUserProfileInput = {
   firstName?: string | null;
   lastName?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
 };
 
-export const updateProfile = async (userId: string, input: PatchProfileInput) => {
-  const existing = await profileRepository.findProfileByUserId(userId);
+export const updateUserProfile = async (userId: string, input: PatchUserProfileInput) => {
+  await userProfileRepository.ensureUserProfileRow(userId);
+  const existing = await userProfileRepository.findUserProfileByUserId(userId);
   if (!existing) return null;
 
-  const cur = existing as ProfileRow;
+  const cur = existing as UserProfileRow;
   const firstName =
     input.firstName !== undefined
       ? String(input.firstName ?? '').trim() || cur.first_name
@@ -64,12 +66,12 @@ export const updateProfile = async (userId: string, input: PatchProfileInput) =>
         : String(input.bio)
       : cur.bio;
 
-  const updated = await profileRepository.replaceProfileFields(userId, {
+  const updated = await userProfileRepository.replaceUserProfileFields(userId, {
     first_name: firstName,
     last_name: lastName,
     avatar_url: avatarUrl,
     bio,
   });
   if (!updated) return null;
-  return toPublic(updated as ProfileRow);
+  return toPublic(updated as UserProfileRow);
 };

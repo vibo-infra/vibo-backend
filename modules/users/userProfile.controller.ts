@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import * as profileService from './profile.service';
+import * as userProfileService from './userProfile.service';
 
-export const getProfile = async (req: Request, res: Response) => {
+export const getMyProfile = async (req: Request, res: Response) => {
   try {
-    const profile = await profileService.getProfile(req.user.userId);
+    const profile = await userProfileService.getUserProfile(req.user.userId);
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
     return res.status(200).json({ profile });
   } catch (e) {
@@ -12,10 +12,10 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 };
 
-export const patchProfile = async (req: Request, res: Response) => {
+export const patchMyProfile = async (req: Request, res: Response) => {
   try {
     const body = req.body ?? {};
-    const profile = await profileService.updateProfile(req.user.userId, {
+    const profile = await userProfileService.updateUserProfile(req.user.userId, {
       firstName: body.firstName,
       lastName: body.lastName,
       avatarUrl: body.avatarUrl,

@@ -64,7 +64,15 @@ export const GET_EVENTS_BY_LOCATION = `
         * cos(radians(l.longitude) - radians($2))
         + sin(radians($1)) * sin(radians(l.latitude))
       ))::numeric, 2
-    ) AS distance_km
+    ) AS distance_km,
+
+    CASE
+      WHEN $8::uuid IS NULL THEN false
+      ELSE EXISTS (
+        SELECT 1 FROM event_like el
+        WHERE el.event_id = e.event_id AND el.user_id = $8::uuid
+      )
+    END AS liked_by_me
 
   FROM event e
   JOIN location      l ON l.location_id  = e.location_id
@@ -91,6 +99,19 @@ export const GET_EVENTS_BY_LOCATION = `
 
   LIMIT  $4
   OFFSET $5
+`;
+
+export const DELETE_EVENT_LIKE = `
+  DELETE FROM event_like
+  WHERE event_id = $1::uuid AND user_id = $2::uuid
+  RETURNING event_id
+`;
+
+export const INSERT_EVENT_LIKE = `
+  INSERT INTO event_like (event_id, user_id)
+  VALUES ($1::uuid, $2::uuid)
+  ON CONFLICT (event_id, user_id) DO NOTHING
+  RETURNING event_id
 `;
 
 /** Host's upcoming events (published or draft). Registered list is empty until registrations exist. */
@@ -136,7 +157,14 @@ export const GET_EVENT_BY_ID = `
     l.address, l.city, l.state, l.latitude, l.longitude,
     l.address AS place_name,
     c.name AS category_name, c.icon_url AS category_icon,
-    p.first_name AS host_first_name, p.avatar_url AS host_avatar
+    p.first_name AS host_first_name, p.avatar_url AS host_avatar,
+    CASE
+      WHEN $2::uuid IS NULL THEN false
+      ELSE EXISTS (
+        SELECT 1 FROM event_like el
+        WHERE el.event_id = e.event_id AND el.user_id = $2::uuid
+      )
+    END AS liked_by_me
   FROM event e
   JOIN location       l ON l.location_id  = e.location_id
   JOIN event_category c ON c.category_id  = e.category_id

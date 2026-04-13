@@ -1,5 +1,4 @@
 import * as webRepository from './web.repository';
-import * as analyticsService from '../analytics/analytics.service';
 import * as email from '../../shared/utils/email/email';
 import {
   sendFileTemplateEmail,
@@ -251,17 +250,6 @@ export const notifyCity = async (input: NotifyCityInput) => {
     );
     sent += batch.length;
   }
-
-  // Track the launch blast as an analytics event
-  analyticsService.track({
-    session_id: 'system',
-    source:     'admin',
-    events: [{
-      event_type: 'city_launch_email_sent',
-      city:       input.city,
-      metadata:   { count: sent },
-    }],
-  }).catch(() => {});
 
   return { queued: sent, dry_run: false, preview: null };
 };

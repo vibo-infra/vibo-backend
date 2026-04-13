@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as webService from './web.service';
+import * as analyticsService from '../analytics/analytics.service';
 import type { SendEmailBatchInput } from './web.types';
 
 // ── Waitlist ──────────────────────────────────────────────────────────────────
@@ -185,6 +186,19 @@ export const notifyCity = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'city is required' });
     }
     const result = await webService.notifyCity({ city, message, dry_run });
+    if (!result.dry_run && typeof result.queued === 'number') {
+      void analyticsService.track({
+        session_id: 'system',
+        source: 'admin',
+        events: [
+          {
+            event_type: 'city_launch_email_sent',
+            city,
+            metadata: { count: result.queued },
+          },
+        ],
+      });
+    }
     return res.status(200).json({ success: true, data: result });
   } catch {
     return res.status(500).json({ error: 'Something went wrong' });

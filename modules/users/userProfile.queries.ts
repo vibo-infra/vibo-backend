@@ -1,4 +1,4 @@
-export const GET_PROFILE = `
+export const GET_USER_PROFILE_ROW = `
   SELECT
     user_id,
     first_name,
@@ -11,7 +11,17 @@ export const GET_PROFILE = `
   WHERE user_id = $1
 `;
 
-export const REPLACE_PROFILE_FIELDS = `
+export const ENSURE_USER_PROFILE_ROW = `
+  INSERT INTO profile (user_id, first_name)
+  SELECT
+    u.user_id,
+    COALESCE(NULLIF(trim(split_part(u.email::text, '@', 1)), ''), 'Member')
+  FROM users u
+  WHERE u.user_id = $1::uuid
+    AND NOT EXISTS (SELECT 1 FROM profile p WHERE p.user_id = u.user_id)
+`;
+
+export const REPLACE_USER_PROFILE_FIELDS = `
   UPDATE profile
   SET
     first_name = $2,

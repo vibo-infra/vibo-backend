@@ -189,6 +189,7 @@ export const getEventsByLocation = async (params: {
   limit?: number;
   city?: string | null;
   categoryId?: string | null;
+  viewerUserId?: string | null;
 }) => {
   const limit = params.limit ?? 20;
   const page = params.page ?? 1;
@@ -203,9 +204,19 @@ export const getEventsByLocation = async (params: {
     offset,
     city: params.city ?? null,
     categoryId: params.categoryId ?? null,
+    viewerUserId: params.viewerUserId ?? null,
   });
 
   return { events, page, limit };
+};
+
+export const toggleEventLike = async (userId: string, eventId: string) => {
+  const host = await eventsRepository.getEventHostId(eventId);
+  if (!host) {
+    throw new Error('EVENT_NOT_FOUND');
+  }
+  const liked = await eventsRepository.toggleEventLike(eventId, userId);
+  return { liked };
 };
 
 export const getMyUpcomingEvents = async (userId: string) => {

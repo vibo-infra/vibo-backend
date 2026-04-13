@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../core/middleware/authenticate';
+import { authenticateOptional } from '../../core/middleware/authenticateOptional';
 import * as eventsController from './events.controller';
 
 const router = Router();
@@ -11,12 +12,14 @@ router.get('/upcoming', authenticate, eventsController.getMyUpcomingEvents);
 
 router.get('/me/upcoming', authenticate, eventsController.getMyUpcomingEvents);
 
-router.get('/', eventsController.getEventsByLocation);
+router.get('/', authenticateOptional, eventsController.getEventsByLocation);
 
 router.get('/:id/reviews', eventsController.getEventReviews);
 router.post('/:id/reviews', authenticate, eventsController.postEventReview);
 
-router.get('/:id', eventsController.getEventById);
+router.post('/:id/like', authenticate, eventsController.toggleEventLike);
+
+router.get('/:id', authenticateOptional, eventsController.getEventById);
 
 router.post('/', authenticate, eventsController.createEvent);
 
