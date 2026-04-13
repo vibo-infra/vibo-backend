@@ -32,6 +32,14 @@ export const markAsRead = async (userId: string, notificationId: string) => {
   return notificationsRepository.markRead(notificationId, userId);
 };
 
+export const markAllAsRead = async (userId: string) => {
+  return notificationsRepository.markAllReadForUser(userId);
+};
+
+export const deleteNotification = async (userId: string, notificationId: string) => {
+  return notificationsRepository.deleteNotificationForUser(notificationId, userId);
+};
+
 export const registerDevice = async (
   userId: string,
   token: string,

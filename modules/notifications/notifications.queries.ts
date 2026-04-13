@@ -19,6 +19,18 @@ export const MARK_NOTIFICATION_READ = `
   RETURNING notification_id
 `;
 
+export const MARK_ALL_NOTIFICATIONS_READ = `
+  UPDATE notification
+  SET read_at = COALESCE(read_at, NOW())
+  WHERE user_id = $1 AND read_at IS NULL
+`;
+
+export const DELETE_NOTIFICATION_FOR_USER = `
+  DELETE FROM notification
+  WHERE notification_id = $1 AND user_id = $2
+  RETURNING notification_id
+`;
+
 export const UPSERT_PUSH_TOKEN = `
   INSERT INTO user_push_token (user_id, token, platform, updated_at)
   VALUES ($1, $2, $3, NOW())

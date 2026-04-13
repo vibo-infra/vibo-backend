@@ -1,4 +1,5 @@
 import { pool } from '../../core/database/client';
+import { parseApiDateTime } from '../../core/datetime/parseApiDateTime';
 import * as eventsRepository from './events.repository';
 import {
   lockUserForHosting,
@@ -136,8 +137,8 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
       locationId: location.location_id,
       eventName: body.eventName,
       eventDescription: body.eventDescription,
-      startTime: new Date(body.startTime),
-      endTime: body.endTime ? new Date(body.endTime) : undefined,
+      startTime: parseApiDateTime(body.startTime),
+      endTime: body.endTime ? parseApiDateTime(body.endTime) : undefined,
       capacity: body.capacity,
       isFree,
       price: body.price,

@@ -46,6 +46,7 @@ export const GET_EVENTS_BY_LOCATION = `
     -- Location details (no place_name column — use address)
     l.address   AS place_name,
     l.city,
+    l.country,
     l.latitude,
     l.longitude,
 
@@ -133,6 +134,7 @@ export const LIST_MY_UPCOMING_HOSTED_EVENTS = `
     e.audience_type,
     l.address   AS place_name,
     l.city,
+    l.country,
     l.latitude,
     l.longitude,
     c.name        AS category_name,
@@ -154,7 +156,7 @@ export const LIST_MY_UPCOMING_HOSTED_EVENTS = `
 export const GET_EVENT_BY_ID = `
   SELECT
     e.*,
-    l.address, l.city, l.state, l.latitude, l.longitude,
+    l.address, l.city, l.state, l.country, l.latitude, l.longitude,
     l.address AS place_name,
     c.name AS category_name, c.icon_url AS category_icon,
     p.first_name AS host_first_name, p.avatar_url AS host_avatar,

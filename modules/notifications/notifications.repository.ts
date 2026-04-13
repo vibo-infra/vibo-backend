@@ -3,6 +3,8 @@ import {
   INSERT_NOTIFICATION,
   LIST_NOTIFICATIONS,
   MARK_NOTIFICATION_READ,
+  MARK_ALL_NOTIFICATIONS_READ,
+  DELETE_NOTIFICATION_FOR_USER,
   UPSERT_PUSH_TOKEN,
   LIST_PUSH_TOKENS_FOR_USER,
   DELETE_PUSH_TOKEN_FOR_USER,
@@ -32,6 +34,16 @@ export const listForUser = async (userId: string, limit: number, offset: number)
 
 export const markRead = async (notificationId: string, userId: string) => {
   const { rows } = await pool.query(MARK_NOTIFICATION_READ, [notificationId, userId]);
+  return rows[0] ?? null;
+};
+
+export const markAllReadForUser = async (userId: string) => {
+  const { rowCount } = await pool.query(MARK_ALL_NOTIFICATIONS_READ, [userId]);
+  return rowCount ?? 0;
+};
+
+export const deleteNotificationForUser = async (notificationId: string, userId: string) => {
+  const { rows } = await pool.query(DELETE_NOTIFICATION_FOR_USER, [notificationId, userId]);
   return rows[0] ?? null;
 };
 

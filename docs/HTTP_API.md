@@ -41,6 +41,8 @@ Base path: **`/v0/api`**. Unless noted, JSON request/response bodies use `Conten
 | `POST /:id/reviews` | Bearer | Submit review. |
 | `POST /` | Bearer | Create / host event. |
 
+**`startTime` / `endTime` (create):** Use ISO 8601. A trailing **`Z`** or an explicit offset (`+05:30`) is an absolute instant in UTC / that zone. A **naive** value without zone (e.g. `2026-04-13T22:30:00`) is read as wall clock in **`EVENT_START_LOCAL_OFFSET`** (default **`+05:30`**, India). So `22:30` without `Z` means 10:30 PM IST, not 10:30 PM UTC.
+
 ---
 
 ## Sparks (`/v0/api/sparks`)
@@ -60,6 +62,8 @@ Base path: **`/v0/api`**. Unless noted, JSON request/response bodies use `Conten
 | `PATCH /:id/read` | Bearer | Mark read. |
 | `POST /register-device` | Bearer | FCM device token registration (RN). |
 | `POST /unregister-device` | Bearer | Body `{ "token" }` — remove token on logout / push off. |
+| `PATCH /read-all` | Bearer | Mark every in-app notification read for the user (`{ ok, updated }`). |
+| `DELETE /:id` | Bearer | Remove one notification row (owner only). |
 
 ---
 

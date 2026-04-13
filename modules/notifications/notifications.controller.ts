@@ -25,6 +25,28 @@ export const markRead = async (req: Request, res: Response) => {
   }
 };
 
+export const markAllRead = async (req: Request, res: Response) => {
+  try {
+    const updated = await notificationsService.markAllAsRead(req.user.userId);
+    return res.status(200).json({ ok: true, updated });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to mark notifications read' });
+  }
+};
+
+export const deleteNotification = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const row = await notificationsService.deleteNotification(req.user.userId, id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to delete notification' });
+  }
+};
+
 export const registerDevice = async (req: Request, res: Response) => {
   try {
     const { token, platform } = req.body ?? {};
