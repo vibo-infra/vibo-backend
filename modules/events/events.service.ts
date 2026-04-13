@@ -231,7 +231,8 @@ export const toggleEventLike = async (userId: string, eventId: string) => {
 
 export const getMyUpcomingEvents = async (userId: string) => {
   const hosted = await eventsRepository.listMyUpcomingHostedEvents(userId);
-  return { hosted, registered: [] as unknown[] };
+  const registered = await eventsRepository.listMyRegisteredUpcomingEvents(userId);
+  return { hosted, registered };
 };
 
 export const listCategories = () => eventsRepository.listCategories();
@@ -241,7 +242,11 @@ export const listReviews = (eventId: string) => eventsRepository.listEventReview
 export const submitReview = async (
   eventId: string,
   reviewerId: string,
-  body: { rating?: number | null; comment?: string | null }
+  body: {
+    rating?: number | null;
+    peerRating?: number | null;
+    comment?: string | null;
+  }
 ) => {
   const meta = await eventsRepository.getEventHostId(eventId);
   if (!meta) {
@@ -251,16 +256,71 @@ export const submitReview = async (
     throw new Error('SELF_REVIEW');
   }
 
+  const elig = await eventsRepository.getEventReviewEligibility(eventId, reviewerId);
+  if (!elig) {
+    throw new Error('EVENT_NOT_FOUND');
+  }
+  if (!elig.is_registered) {
+    throw new Error('NOT_ATTENDED');
+  }
+  if (!elig.event_ended) {
+    throw new Error('EVENT_NOT_ENDED');
+  }
+
   const rating =
     body.rating === undefined || body.rating === null ? null : Number(body.rating);
+  const peerRating =
+    body.peerRating === undefined || body.peerRating === null
+      ? null
+      : Number(body.peerRating);
   const comment = body.comment?.trim() ? body.comment.trim() : null;
 
-  if (rating === null && !comment) {
+  if (rating === null && peerRating === null && !comment) {
     throw new Error('REVIEW_EMPTY');
   }
   if (rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
     throw new Error('INVALID_RATING');
   }
+  if (
+    peerRating !== null &&
+    (!Number.isInteger(peerRating) || peerRating < 1 || peerRating > 5)
+  ) {
+    throw new Error('INVALID_PEER_RATING');
+  }
 
-  return eventsRepository.upsertEventReview(eventId, reviewerId, rating, comment);
+  return eventsRepository.upsertEventReview(
+    eventId,
+    reviewerId,
+    rating,
+    comment,
+    peerRating
+  );
+};
+
+export const registerForEvent = async (eventId: string, userId: string) => {
+  return eventsRepository.registerForEvent(eventId, userId);
+};
+
+export const deleteEventAsHost = async (eventId: string, hostId: string) => {
+  const ok = await eventsRepository.cancelEventByHost(eventId, hostId);
+  if (!ok) {
+    throw new Error('DELETE_NOT_ALLOWED');
+  }
+  return { ok: true };
+};
+
+export const getHostPublicProfile = async (hostId: string) => {
+  const agg = await eventsRepository.getHostPublicAgg(hostId);
+  if (!agg) {
+    throw new Error('USER_NOT_FOUND');
+  }
+  const events = await eventsRepository.listPastHostedEventsWithStats(hostId);
+  const withReviews = await Promise.all(
+    events.map(async (row: Record<string, unknown>) => {
+      const id = String(row.event_id);
+      const reviews = await eventsRepository.listEventReviews(id);
+      return { event: row, reviews };
+    })
+  );
+  return { host: agg, pastEvents: withReviews };
 };

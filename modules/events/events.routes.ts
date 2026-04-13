@@ -12,10 +12,19 @@ router.get('/upcoming', authenticate, eventsController.getMyUpcomingEvents);
 
 router.get('/me/upcoming', authenticate, eventsController.getMyUpcomingEvents);
 
+router.get(
+  '/hosts/:hostId/profile',
+  authenticateOptional,
+  eventsController.getHostPublicProfile
+);
+
 router.get('/', authenticateOptional, eventsController.getEventsByLocation);
 
 router.get('/:id/reviews', eventsController.getEventReviews);
 router.post('/:id/reviews', authenticate, eventsController.postEventReview);
+
+router.post('/:id/register', authenticate, eventsController.registerForEvent);
+router.delete('/:id', authenticate, eventsController.deleteEventAsHost);
 
 router.post('/:id/like', authenticate, eventsController.toggleEventLike);
 
