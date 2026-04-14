@@ -101,6 +101,16 @@ export const getMyUpcomingEvents = async (req: Request, res: Response) => {
   }
 };
 
+export const getMyAllEvents = async (req: Request, res: Response) => {
+  try {
+    const data = await eventsService.getMyAllEvents(req.user.userId);
+    return res.status(200).json(data);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Failed to load your events' });
+  }
+};
+
 export const getEventById = async (req: Request, res: Response) => {
   try {
     const event = await eventsRepository.getEventById(

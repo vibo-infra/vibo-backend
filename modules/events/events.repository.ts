@@ -11,6 +11,8 @@ import {
   LIST_EVENT_REVIEWS,
   LIST_MY_UPCOMING_HOSTED_EVENTS,
   LIST_MY_REGISTERED_UPCOMING_EVENTS,
+  LIST_MY_PAST_HOSTED_EVENTS,
+  LIST_MY_REGISTERED_PAST_EVENTS,
   LOCK_EVENT_FOR_REGISTRATION,
   INSERT_EVENT_REGISTRATION,
   INCREMENT_EVENT_ATTENDEE_COUNT,
@@ -123,6 +125,16 @@ export const listMyUpcomingHostedEvents = async (hostId: string) => {
 
 export const listMyRegisteredUpcomingEvents = async (userId: string) => {
   const { rows } = await pool.query(LIST_MY_REGISTERED_UPCOMING_EVENTS, [userId]);
+  return rows;
+};
+
+export const listMyPastHostedEvents = async (hostId: string) => {
+  const { rows } = await pool.query(LIST_MY_PAST_HOSTED_EVENTS, [hostId]);
+  return rows;
+};
+
+export const listMyRegisteredPastEvents = async (userId: string) => {
+  const { rows } = await pool.query(LIST_MY_REGISTERED_PAST_EVENTS, [userId]);
   return rows;
 };
 

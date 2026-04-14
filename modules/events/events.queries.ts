@@ -283,6 +283,97 @@ export const LIST_MY_REGISTERED_UPCOMING_EVENTS = `
   LIMIT 50
 `;
 
+export const LIST_MY_PAST_HOSTED_EVENTS = `
+  SELECT
+    e.event_id,
+    e.host_id,
+    e.event_name,
+    e.event_description,
+    e.cover_image_url,
+    e.start_time,
+    e.end_time,
+    e.is_free,
+    e.price,
+    e.capacity,
+    e.current_attendee_count,
+    e.requires_approval,
+    e.status,
+    e.audience_type,
+    l.address   AS place_name,
+    l.city,
+    l.country,
+    l.latitude,
+    l.longitude,
+    c.name        AS category_name,
+    c.icon_url    AS category_icon,
+    p.first_name  AS host_first_name,
+    p.avatar_url  AS host_avatar,
+    NULL::numeric AS distance_km,
+    (SELECT COUNT(*)::int FROM event_like el WHERE el.event_id = e.event_id) AS like_count,
+    EXISTS (
+      SELECT 1 FROM event_like el2
+      WHERE el2.event_id = e.event_id AND el2.user_id = $1::uuid
+    ) AS liked_by_me,
+    EXISTS (
+      SELECT 1 FROM event_registration er
+      WHERE er.event_id = e.event_id AND er.user_id = $1::uuid AND er.status = 'registered'
+    ) AS is_registered_by_me
+  FROM event e
+  JOIN location      l ON l.location_id  = e.location_id
+  JOIN event_category c ON c.category_id = e.category_id
+  JOIN profile       p ON p.user_id      = e.host_id
+  WHERE e.host_id = $1::uuid
+    AND e.start_time <= NOW()
+    AND e.status IN ('published', 'cancelled')
+  ORDER BY e.start_time DESC
+  LIMIT 100
+`;
+
+export const LIST_MY_REGISTERED_PAST_EVENTS = `
+  SELECT
+    e.event_id,
+    e.host_id,
+    e.event_name,
+    e.event_description,
+    e.cover_image_url,
+    e.start_time,
+    e.end_time,
+    e.is_free,
+    e.price,
+    e.capacity,
+    e.current_attendee_count,
+    e.requires_approval,
+    e.status,
+    e.audience_type,
+    l.address   AS place_name,
+    l.city,
+    l.country,
+    l.latitude,
+    l.longitude,
+    c.name        AS category_name,
+    c.icon_url    AS category_icon,
+    p.first_name  AS host_first_name,
+    p.avatar_url  AS host_avatar,
+    NULL::numeric AS distance_km,
+    (SELECT COUNT(*)::int FROM event_like el WHERE el.event_id = e.event_id) AS like_count,
+    true AS is_registered_by_me,
+    EXISTS (
+      SELECT 1 FROM event_like el2
+      WHERE el2.event_id = e.event_id AND el2.user_id = $1::uuid
+    ) AS liked_by_me
+  FROM event_registration er
+  JOIN event e         ON e.event_id     = er.event_id
+  JOIN location l      ON l.location_id  = e.location_id
+  JOIN event_category c ON c.category_id = e.category_id
+  JOIN profile p       ON p.user_id      = e.host_id
+  WHERE er.user_id = $1::uuid
+    AND er.status = 'registered'
+    AND e.start_time <= NOW()
+    AND e.status IN ('published', 'cancelled')
+  ORDER BY e.start_time DESC
+  LIMIT 100
+`;
+
 export const LOCK_EVENT_FOR_REGISTRATION = `
   SELECT
     e.event_id,

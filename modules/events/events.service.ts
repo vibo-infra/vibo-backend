@@ -236,6 +236,16 @@ export const getMyUpcomingEvents = async (userId: string) => {
   return { hosted, registered };
 };
 
+export const getMyAllEvents = async (userId: string) => {
+  const [hostedUpcoming, hostedPast, registeredUpcoming, registeredPast] = await Promise.all([
+    eventsRepository.listMyUpcomingHostedEvents(userId),
+    eventsRepository.listMyPastHostedEvents(userId),
+    eventsRepository.listMyRegisteredUpcomingEvents(userId),
+    eventsRepository.listMyRegisteredPastEvents(userId),
+  ]);
+  return { hostedUpcoming, hostedPast, registeredUpcoming, registeredPast };
+};
+
 export const listCategories = () => eventsRepository.listCategories();
 
 export const listReviews = (eventId: string) => eventsRepository.listEventReviews(eventId);
