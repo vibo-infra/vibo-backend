@@ -116,8 +116,11 @@ export const getEventById = async (req: Request, res: Response) => {
 
 export const toggleEventLike = async (req: Request, res: Response) => {
   try {
-    const { liked } = await eventsService.toggleEventLike(req.user.userId, req.params.id as string);
-    return res.status(200).json({ liked });
+    const { liked, likeCount } = await eventsService.toggleEventLike(
+      req.user.userId,
+      req.params.id as string,
+    );
+    return res.status(200).json({ liked, likeCount });
   } catch (err: unknown) {
     if (err instanceof Error && err.message === 'EVENT_NOT_FOUND') {
       return res.status(404).json({ error: 'Event not found' });

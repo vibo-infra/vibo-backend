@@ -140,6 +140,14 @@ export const toggleEventLike = async (eventId: string, userId: string): Promise<
   return (ins.rowCount ?? 0) > 0;
 };
 
+export const countEventLikes = async (eventId: string): Promise<number> => {
+  const { rows } = await pool.query(
+    'SELECT COUNT(*)::int AS c FROM event_like WHERE event_id = $1::uuid',
+    [eventId],
+  );
+  return Number(rows[0]?.c ?? 0);
+};
+
 export const createLocationWithClient = (client: PoolClient, data: LocationInput) =>
   insertLocation(client, data);
 

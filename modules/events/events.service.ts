@@ -226,7 +226,8 @@ export const toggleEventLike = async (userId: string, eventId: string) => {
     throw new Error('EVENT_NOT_FOUND');
   }
   const liked = await eventsRepository.toggleEventLike(eventId, userId);
-  return { liked };
+  const likeCount = await eventsRepository.countEventLikes(eventId);
+  return { liked, likeCount };
 };
 
 export const getMyUpcomingEvents = async (userId: string) => {

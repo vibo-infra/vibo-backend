@@ -73,7 +73,15 @@ export const GET_EVENTS_BY_LOCATION = `
         SELECT 1 FROM event_like el
         WHERE el.event_id = e.event_id AND el.user_id = $8::uuid
       )
-    END AS liked_by_me
+    END AS liked_by_me,
+    CASE
+      WHEN $8::uuid IS NULL THEN false
+      ELSE EXISTS (
+        SELECT 1 FROM event_registration er
+        WHERE er.event_id = e.event_id AND er.user_id = $8::uuid AND er.status = 'registered'
+      )
+    END AS is_registered_by_me,
+    (SELECT COUNT(*)::int FROM event_like elc WHERE elc.event_id = e.event_id) AS like_count
 
   FROM event e
   JOIN location      l ON l.location_id  = e.location_id
@@ -141,7 +149,16 @@ export const LIST_MY_UPCOMING_HOSTED_EVENTS = `
     c.icon_url    AS category_icon,
     p.first_name  AS host_first_name,
     p.avatar_url  AS host_avatar,
-    NULL::numeric AS distance_km
+    NULL::numeric AS distance_km,
+    (SELECT COUNT(*)::int FROM event_like el WHERE el.event_id = e.event_id) AS like_count,
+    EXISTS (
+      SELECT 1 FROM event_like el2
+      WHERE el2.event_id = e.event_id AND el2.user_id = $1::uuid
+    ) AS liked_by_me,
+    EXISTS (
+      SELECT 1 FROM event_registration er
+      WHERE er.event_id = e.event_id AND er.user_id = $1::uuid AND er.status = 'registered'
+    ) AS is_registered_by_me
   FROM event e
   JOIN location      l ON l.location_id  = e.location_id
   JOIN event_category c ON c.category_id = e.category_id
@@ -173,7 +190,8 @@ export const GET_EVENT_BY_ID = `
         SELECT 1 FROM event_registration er
         WHERE er.event_id = e.event_id AND er.user_id = $2::uuid AND er.status = 'registered'
       )
-    END AS is_registered_by_me
+    END AS is_registered_by_me,
+    (SELECT COUNT(*)::int FROM event_like elc WHERE elc.event_id = e.event_id) AS like_count
   FROM event e
   JOIN location       l ON l.location_id  = e.location_id
   JOIN event_category c ON c.category_id  = e.category_id
@@ -245,7 +263,13 @@ export const LIST_MY_REGISTERED_UPCOMING_EVENTS = `
     c.icon_url    AS category_icon,
     p.first_name  AS host_first_name,
     p.avatar_url  AS host_avatar,
-    NULL::numeric AS distance_km
+    NULL::numeric AS distance_km,
+    (SELECT COUNT(*)::int FROM event_like el WHERE el.event_id = e.event_id) AS like_count,
+    true AS is_registered_by_me,
+    EXISTS (
+      SELECT 1 FROM event_like el2
+      WHERE el2.event_id = e.event_id AND el2.user_id = $1::uuid
+    ) AS liked_by_me
   FROM event_registration er
   JOIN event e         ON e.event_id     = er.event_id
   JOIN location l      ON l.location_id  = e.location_id
