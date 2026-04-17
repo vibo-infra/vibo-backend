@@ -136,7 +136,28 @@ export const toggleEventLike = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Event not found' });
     }
     console.error(err);
-    return res.status(500).json({ error: 'Failed to update save' });
+    return res.status(500).json({ error: 'Failed to update interest' });
+  }
+};
+
+export const postEventCheckin = async (req: Request, res: Response) => {
+  try {
+    await eventsService.checkInToEvent(req.params.id as string, req.user.userId);
+    return res.status(200).json({ ok: true });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '';
+    if (msg === 'EVENT_NOT_FOUND') return res.status(404).json({ error: 'Event not found' });
+    if (msg === 'CHECKIN_NOT_ELIGIBLE') {
+      return res.status(403).json({ error: 'Join or tap “Might go” first' });
+    }
+    if (msg === 'CHECKIN_OUTSIDE_WINDOW') {
+      return res.status(400).json({ error: 'Check-in opens 2h before start and closes 3h after' });
+    }
+    if (msg === 'HOST_NO_CHECKIN') {
+      return res.status(400).json({ error: 'Host check-in is not needed here' });
+    }
+    console.error(err);
+    return res.status(500).json({ error: 'Check-in failed' });
   }
 };
 

@@ -20,9 +20,10 @@ export const CREATE_EVENT = `
     requires_approval,
     is_private,
     audience_type,
-    status
+    status,
+    ease_tags
   )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, COALESCE($16::text[], '{}'::text[]))
   RETURNING *
 `;
 
@@ -81,7 +82,13 @@ export const GET_EVENTS_BY_LOCATION = `
         WHERE er.event_id = e.event_id AND er.user_id = $8::uuid AND er.status = 'registered'
       )
     END AS is_registered_by_me,
-    (SELECT COUNT(*)::int FROM event_like elc WHERE elc.event_id = e.event_id) AS like_count
+    (SELECT COUNT(*)::int FROM event_like elc WHERE elc.event_id = e.event_id) AS like_count,
+    (SELECT COUNT(*)::int FROM event_registration erx
+      WHERE erx.event_id = e.event_id AND erx.status = 'registered') AS registration_count,
+    (SELECT COUNT(*)::int FROM event_checkin cic WHERE cic.event_id = e.event_id) AS checkin_count,
+    (SELECT COUNT(*)::int FROM event eh
+      WHERE eh.host_id = e.host_id AND eh.status = 'published') AS host_events_published_count,
+    COALESCE(e.ease_tags, '{}'::text[]) AS ease_tags
 
   FROM event e
   JOIN location      l ON l.location_id  = e.location_id
@@ -104,7 +111,7 @@ export const GET_EVENTS_BY_LOCATION = `
     AND ($6::text IS NULL OR TRIM($6) = '' OR LOWER(TRIM(l.city)) = LOWER(TRIM($6)))
     AND ($7::uuid IS NULL OR e.category_id = $7)
 
-  ORDER BY distance_km ASC, e.start_time ASC
+  ORDER BY e.start_time ASC, distance_km ASC
 
   LIMIT  $4
   OFFSET $5
@@ -191,7 +198,14 @@ export const GET_EVENT_BY_ID = `
         WHERE er.event_id = e.event_id AND er.user_id = $2::uuid AND er.status = 'registered'
       )
     END AS is_registered_by_me,
-    (SELECT COUNT(*)::int FROM event_like elc WHERE elc.event_id = e.event_id) AS like_count
+    (SELECT COUNT(*)::int FROM event_like elc WHERE elc.event_id = e.event_id) AS like_count,
+    (SELECT COUNT(*)::int FROM event_registration erx
+      WHERE erx.event_id = e.event_id AND erx.status = 'registered') AS registration_count,
+    (SELECT COUNT(*)::int FROM event_checkin cic WHERE cic.event_id = e.event_id) AS checkin_count,
+    (SELECT COUNT(*)::int FROM event eh
+      WHERE eh.host_id = e.host_id AND eh.status = 'published') AS host_events_published_count,
+    COALESCE(e.ease_tags, '{}'::text[]) AS ease_tags,
+    e.interest_last_broadcast_at
   FROM event e
   JOIN location       l ON l.location_id  = e.location_id
   JOIN event_category c ON c.category_id  = e.category_id
@@ -493,6 +507,56 @@ export const LIST_PAST_HOSTED_EVENTS_WITH_STATS = `
     AND e.start_time < NOW()
   ORDER BY e.start_time DESC
   LIMIT 30
+`;
+
+export const INSERT_EVENT_CHECKIN = `
+  INSERT INTO event_checkin (event_id, user_id)
+  VALUES ($1::uuid, $2::uuid)
+  ON CONFLICT (event_id, user_id) DO UPDATE SET checked_in_at = EXCLUDED.checked_in_at
+  RETURNING event_id
+`;
+
+export const LIST_EVENT_INTEREST_USER_IDS = `
+  SELECT DISTINCT uid FROM (
+    SELECT el.user_id AS uid FROM event_like el WHERE el.event_id = $1::uuid
+    UNION
+    SELECT er.user_id AS uid FROM event_registration er
+    WHERE er.event_id = $1::uuid AND er.status = 'registered'
+  ) q
+  WHERE uid IS NOT NULL
+`;
+
+export const GET_EVENT_FOR_NEARBY_NOTIFY = `
+  SELECT e.event_id, e.event_name, e.host_id, l.latitude, l.longitude
+  FROM event e
+  JOIN location l ON l.location_id = e.location_id
+  WHERE e.event_id = $1::uuid AND e.status = 'published'
+`;
+
+export const LIST_USER_IDS_NEAR_POINT = `
+  SELECT DISTINCT u.user_id
+  FROM users u
+  INNER JOIN user_push_token t ON t.user_id = u.user_id
+  WHERE u.user_id <> $1::uuid
+    AND COALESCE(u.push_notifications_enabled, TRUE) IS TRUE
+    AND u.last_known_latitude IS NOT NULL
+    AND u.last_known_longitude IS NOT NULL
+    AND u.last_known_geo_at > NOW() - INTERVAL '14 days'
+    AND (
+      6371 * acos(
+        LEAST(1.0, GREATEST(-1.0,
+          cos(radians($2::double precision)) * cos(radians(u.last_known_latitude))
+          * cos(radians(u.last_known_longitude) - radians($3::double precision))
+          + sin(radians($2::double precision)) * sin(radians(u.last_known_latitude))
+        ))
+      )
+    ) <= $4::double precision
+`;
+
+export const UPDATE_EVENT_INTEREST_BROADCAST_AT = `
+  UPDATE event
+  SET interest_last_broadcast_at = NOW(), updated_at = NOW()
+  WHERE event_id = $1::uuid
 `;
 
 /** Pre-launch: must appear on waitlist; optional signup deadline via early_access_cutoff_at. */

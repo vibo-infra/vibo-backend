@@ -21,6 +21,10 @@ import {
 import * as notificationsService from '../notifications/notifications.service';
 import { PushPayloadType } from '../notifications/pushPayload';
 import { notifySparksLowIfCrossedThreshold } from '../notifications/pushTriggers';
+import {
+  notifyInterestMomentumIfNeeded,
+  notifyNearbyUsersOfPublishedEvent,
+} from '../notifications/eventLifecyclePushes.service';
 
 const parseWaitlistTier = (v: unknown): WaitlistTier => {
   if (v === 'tier1' || v === 'tier2') return v;
@@ -40,6 +44,8 @@ type CreateEventBody = {
   isPrivate?: boolean;
   audienceType?: string;
   publishNow?: boolean;
+  /** Short labels shown on cards, e.g. solo-friendly, casual, drop-in */
+  easeTags?: string[];
   location: {
     address: string;
     city: string;
@@ -146,6 +152,7 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
       isPrivate: body.isPrivate ?? false,
       audienceType: body.audienceType ?? 'everyone',
       status,
+      easeTags: body.easeTags,
     });
 
     if (hostingTxId && event?.event_id) {
@@ -180,6 +187,12 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
         body: `${event.event_name} is live for nearby members.`,
         data: { type: PushPayloadType.eventPublished, eventId: event.event_id },
       });
+      const eid = String(event.event_id ?? '');
+      if (eid) {
+        void notifyNearbyUsersOfPublishedEvent(eid).catch((err) =>
+          console.error('[events] nearby publish notify failed', eid, err)
+        );
+      }
     }
 
     return event;
@@ -227,6 +240,11 @@ export const toggleEventLike = async (userId: string, eventId: string) => {
   }
   const liked = await eventsRepository.toggleEventLike(eventId, userId);
   const likeCount = await eventsRepository.countEventLikes(eventId);
+  if (liked) {
+    void notifyInterestMomentumIfNeeded(eventId, userId, likeCount).catch((err) =>
+      console.error('[events] interest momentum notify failed', eventId, err)
+    );
+  }
   return { liked, likeCount };
 };
 
@@ -310,6 +328,45 @@ export const submitReview = async (
 
 export const registerForEvent = async (eventId: string, userId: string) => {
   return eventsRepository.registerForEvent(eventId, userId);
+};
+
+export const checkInToEvent = async (eventId: string, userId: string) => {
+  const row = await eventsRepository.getEventById(eventId, userId);
+  if (!row) {
+    throw new Error('EVENT_NOT_FOUND');
+  }
+  const hostId = String((row as { host_id?: string }).host_id ?? '');
+  if (hostId === userId) {
+    throw new Error('HOST_NO_CHECKIN');
+  }
+  const liked = Boolean((row as { liked_by_me?: boolean }).liked_by_me);
+  const reg = Boolean((row as { is_registered_by_me?: boolean }).is_registered_by_me);
+  if (!liked && !reg) {
+    throw new Error('CHECKIN_NOT_ELIGIBLE');
+  }
+  const start = new Date(String((row as { start_time?: string }).start_time ?? ''));
+  if (Number.isNaN(start.getTime())) {
+    throw new Error('EVENT_NOT_FOUND');
+  }
+  const now = Date.now();
+  const winStart = start.getTime() - 2 * 60 * 60 * 1000;
+  const winEnd = start.getTime() + 3 * 60 * 60 * 1000;
+  if (now < winStart || now > winEnd) {
+    throw new Error('CHECKIN_OUTSIDE_WINDOW');
+  }
+  await eventsRepository.upsertEventCheckin(eventId, userId);
+
+  const name = String((row as { event_name?: string }).event_name ?? 'The event');
+  const peers = (await eventsRepository.listEventInterestUserIds(eventId)).filter((id) => id !== userId);
+  for (const uid of peers) {
+    await notificationsService.createInAppNotification({
+      userId: uid,
+      title: 'People are showing up',
+      body: `Someone just tapped “I’m here” at ${name}.`,
+      data: { type: PushPayloadType.eventCheckinPeer, eventId },
+    });
+  }
+  return { ok: true as const };
 };
 
 export const deleteEventAsHost = async (eventId: string, hostId: string) => {

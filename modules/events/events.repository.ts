@@ -22,6 +22,11 @@ import {
   LIST_PAST_HOSTED_EVENTS_WITH_STATS,
   DELETE_EVENT_LIKE,
   INSERT_EVENT_LIKE,
+  INSERT_EVENT_CHECKIN,
+  LIST_EVENT_INTEREST_USER_IDS,
+  GET_EVENT_FOR_NEARBY_NOTIFY,
+  LIST_USER_IDS_NEAR_POINT,
+  UPDATE_EVENT_INTEREST_BROADCAST_AT,
 } from './events.queries';
 
 type LocationInput = {
@@ -51,6 +56,7 @@ type EventInsertInput = {
   isPrivate: boolean;
   audienceType: string;
   status: string;
+  easeTags?: string[];
 };
 
 const insertLocation = async (db: Pool | PoolClient, data: LocationInput) => {
@@ -69,6 +75,9 @@ const insertLocation = async (db: Pool | PoolClient, data: LocationInput) => {
 };
 
 const insertEventRow = async (db: Pool | PoolClient, data: EventInsertInput) => {
+  const tags = Array.isArray(data.easeTags)
+    ? data.easeTags.map((t) => String(t).trim()).filter((t) => t.length > 0 && t.length <= 32).slice(0, 8)
+    : [];
   const { rows } = await db.query(CREATE_EVENT, [
     data.hostId,
     data.categoryId,
@@ -85,6 +94,7 @@ const insertEventRow = async (db: Pool | PoolClient, data: EventInsertInput) => 
     data.isPrivate,
     data.audienceType,
     data.status,
+    tags,
   ]);
   return rows[0];
 };
@@ -284,4 +294,57 @@ export const getHostPublicAgg = async (hostId: string) => {
 export const listPastHostedEventsWithStats = async (hostId: string) => {
   const { rows } = await pool.query(LIST_PAST_HOSTED_EVENTS_WITH_STATS, [hostId]);
   return rows;
+};
+
+export const upsertEventCheckin = async (eventId: string, userId: string) => {
+  const { rows } = await pool.query(INSERT_EVENT_CHECKIN, [eventId, userId]);
+  return rows.length > 0;
+};
+
+export const listEventInterestUserIds = async (eventId: string): Promise<string[]> => {
+  const { rows } = await pool.query(LIST_EVENT_INTEREST_USER_IDS, [eventId]);
+  return (rows as { uid: string }[]).map((r) => r.uid).filter(Boolean);
+};
+
+export const getEventForNearbyNotify = async (eventId: string) => {
+  const { rows } = await pool.query(GET_EVENT_FOR_NEARBY_NOTIFY, [eventId]);
+  return rows[0] as
+    | {
+        event_id: string;
+        event_name: string;
+        host_id: string;
+        latitude: string | number;
+        longitude: string | number;
+      }
+    | undefined;
+};
+
+export const listUserIdsNearPoint = async (
+  excludeUserId: string,
+  lat: number,
+  lng: number,
+  radiusKm: number
+): Promise<string[]> => {
+  const { rows } = await pool.query(LIST_USER_IDS_NEAR_POINT, [excludeUserId, lat, lng, radiusKm]);
+  return (rows as { user_id: string }[]).map((r) => r.user_id);
+};
+
+export const touchEventInterestBroadcastAt = async (eventId: string) => {
+  await pool.query(UPDATE_EVENT_INTEREST_BROADCAST_AT, [eventId]);
+};
+
+export const hasAttendeePushSent = async (eventId: string, userId: string, kind: string) => {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM event_attendee_push_sent WHERE event_id = $1::uuid AND user_id = $2::uuid AND kind = $3 LIMIT 1`,
+    [eventId, userId, kind],
+  );
+  return rows.length > 0;
+};
+
+export const markAttendeePushSent = async (eventId: string, userId: string, kind: string) => {
+  await pool.query(
+    `INSERT INTO event_attendee_push_sent (event_id, user_id, kind) VALUES ($1::uuid, $2::uuid, $3)
+     ON CONFLICT DO NOTHING`,
+    [eventId, userId, kind],
+  );
 };

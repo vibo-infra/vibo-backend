@@ -57,6 +57,17 @@ export const MERGE_USER_APP_PREFERENCES = `
   RETURNING user_id
 `;
 
+export const PATCH_USER_LAST_GEO = `
+  UPDATE users
+  SET
+    last_known_latitude = $2::double precision,
+    last_known_longitude = $3::double precision,
+    last_known_geo_at = NOW(),
+    updated_at = NOW()
+  WHERE user_id = $1::uuid
+  RETURNING user_id
+`;
+
 export const LOCK_USER_FOR_GRANTS = `
   SELECT
     u.user_id,

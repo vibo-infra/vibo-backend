@@ -89,6 +89,13 @@ export const updateMe = async (userId: string, input: PatchUserInput) => {
   if (input.defaultCity !== undefined && input.defaultCity) {
     await assertAllowedDefaultCity(input.defaultCity);
   }
+  if (input.lastKnownLatitude != null || input.lastKnownLongitude != null) {
+    const la = Number(input.lastKnownLatitude);
+    const lo = Number(input.lastKnownLongitude);
+    if (!Number.isFinite(la) || !Number.isFinite(lo) || la < -90 || la > 90 || lo < -180 || lo > 180) {
+      throw new Error('INVALID_LAST_KNOWN_LOCATION');
+    }
+  }
   const updated = await patchUser(userId, input);
   return toPublic(updated);
 };

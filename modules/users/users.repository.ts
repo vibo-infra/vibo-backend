@@ -3,6 +3,7 @@ import { reconcileSparkMirrorForUser } from '../spark/spark.repository';
 import {
   GET_AUTH_USER_PAYLOAD,
   PATCH_USER_PROFILE,
+  PATCH_USER_LAST_GEO,
   PATCH_PROFILE_NAME,
   MERGE_USER_APP_PREFERENCES,
   LOCK_USER_FOR_GRANTS,
@@ -26,6 +27,8 @@ export type PatchUserInput = {
   pushNotificationsEnabled?: boolean | null;
   inAppNotificationsEnabled?: boolean | null;
   appPreferences?: Record<string, unknown> | null;
+  lastKnownLatitude?: number | null;
+  lastKnownLongitude?: number | null;
 };
 
 export const patchUser = async (userId: string, input: PatchUserInput) => {
@@ -44,6 +47,18 @@ export const patchUser = async (userId: string, input: PatchUserInput) => {
     await pool.query(MERGE_USER_APP_PREFERENCES, [
       userId,
       JSON.stringify(input.appPreferences),
+    ]);
+  }
+  if (
+    input.lastKnownLatitude != null &&
+    input.lastKnownLongitude != null &&
+    Number.isFinite(input.lastKnownLatitude) &&
+    Number.isFinite(input.lastKnownLongitude)
+  ) {
+    await pool.query(PATCH_USER_LAST_GEO, [
+      userId,
+      input.lastKnownLatitude,
+      input.lastKnownLongitude,
     ]);
   }
   return findAuthUserPayload(userId);

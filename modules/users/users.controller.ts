@@ -20,7 +20,12 @@ export const patchMe = async (req: Request, res: Response) => {
       pushNotificationsEnabled,
       inAppNotificationsEnabled,
       appPreferences,
+      lastKnownLocation,
     } = req.body ?? {};
+    const loc =
+      lastKnownLocation && typeof lastKnownLocation === 'object' && lastKnownLocation !== null
+        ? (lastKnownLocation as { latitude?: unknown; longitude?: unknown })
+        : null;
     const user = await usersService.updateMe(req.user.userId, {
       defaultCity: defaultCity !== undefined ? String(defaultCity).trim() || null : undefined,
       firstName: firstName !== undefined ? String(firstName).trim() : undefined,
@@ -32,6 +37,18 @@ export const patchMe = async (req: Request, res: Response) => {
         appPreferences !== undefined && typeof appPreferences === 'object' && appPreferences !== null
           ? (appPreferences as Record<string, unknown>)
           : undefined,
+      lastKnownLatitude:
+        loc && typeof loc.latitude === 'number'
+          ? loc.latitude
+          : loc && typeof loc.latitude === 'string'
+            ? Number(loc.latitude)
+            : undefined,
+      lastKnownLongitude:
+        loc && typeof loc.longitude === 'number'
+          ? loc.longitude
+          : loc && typeof loc.longitude === 'string'
+            ? Number(loc.longitude)
+            : undefined,
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.status(200).json({ user });
@@ -42,6 +59,9 @@ export const patchMe = async (req: Request, res: Response) => {
     }
     if (msg === 'DEFAULT_CITY_REQUIRED') {
       return res.status(400).json({ error: 'City is required' });
+    }
+    if (msg === 'INVALID_LAST_KNOWN_LOCATION') {
+      return res.status(400).json({ error: 'Invalid last known location' });
     }
     console.error(e);
     return res.status(500).json({ error: 'Failed to update profile' });
