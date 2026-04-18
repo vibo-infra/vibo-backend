@@ -15,7 +15,10 @@ import {
   LIST_MY_REGISTERED_PAST_EVENTS,
   LOCK_EVENT_FOR_REGISTRATION,
   INSERT_EVENT_REGISTRATION,
+  REACTIVATE_EVENT_REGISTRATION,
   INCREMENT_EVENT_ATTENDEE_COUNT,
+  CANCEL_EVENT_REGISTRATION,
+  DECREMENT_EVENT_ATTENDEE_COUNT,
   CANCEL_EVENT_BY_HOST,
   EVENT_REVIEW_ELIGIBILITY,
   HOST_PUBLIC_AGG,
@@ -247,12 +250,43 @@ export const registerForEvent = async (eventId: string, userId: string) => {
     }
     const ins = await client.query(INSERT_EVENT_REGISTRATION, [eventId, userId]);
     if (!ins.rowCount) {
+      const react = await client.query(REACTIVATE_EVENT_REGISTRATION, [eventId, userId]);
+      if (react.rowCount) {
+        await client.query(INCREMENT_EVENT_ATTENDEE_COUNT, [eventId]);
+        await client.query('COMMIT');
+        return { ok: true as const, alreadyRegistered: false as const };
+      }
       await client.query('COMMIT');
       return { ok: true as const, alreadyRegistered: true as const };
     }
     await client.query(INCREMENT_EVENT_ATTENDEE_COUNT, [eventId]);
     await client.query('COMMIT');
     return { ok: true as const, alreadyRegistered: false as const };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
+export const cancelRegistrationForEvent = async (
+  eventId: string,
+  userId: string,
+  withdrawalNote: string | null
+) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const note = withdrawalNote?.trim() ? withdrawalNote.trim().slice(0, 2000) : null;
+    const upd = await client.query(CANCEL_EVENT_REGISTRATION, [eventId, userId, note]);
+    if (!upd.rowCount) {
+      await client.query('ROLLBACK');
+      return { ok: false as const, code: 'NOT_REGISTERED' as const };
+    }
+    await client.query(DECREMENT_EVENT_ATTENDEE_COUNT, [eventId]);
+    await client.query('COMMIT');
+    return { ok: true as const };
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;

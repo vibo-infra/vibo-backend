@@ -25,6 +25,7 @@ router.get('/:id/reviews', eventsController.getEventReviews);
 router.post('/:id/reviews', authenticate, eventsController.postEventReview);
 
 router.post('/:id/register', authenticate, eventsController.registerForEvent);
+router.post('/:id/cancel-registration', authenticate, eventsController.cancelRegistration);
 router.post('/:id/checkin', authenticate, eventsController.postEventCheckin);
 router.delete('/:id', authenticate, eventsController.deleteEventAsHost);
 

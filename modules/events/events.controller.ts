@@ -206,6 +206,24 @@ export const postEventReview = async (req: Request, res: Response) => {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+export const cancelRegistration = async (req: Request, res: Response) => {
+  try {
+    const eventId = req.params.id as string;
+    const note =
+      typeof (req.body as { note?: unknown })?.note === 'string'
+        ? (req.body as { note: string }).note
+        : undefined;
+    const r = await eventsService.cancelRegistrationForEvent(eventId, req.user.userId, note);
+    if (!r.ok) {
+      return res.status(400).json({ error: 'You are not registered for this event' });
+    }
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Could not update registration' });
+  }
+};
+
 export const registerForEvent = async (req: Request, res: Response) => {
   try {
     const eventId = req.params.id as string;

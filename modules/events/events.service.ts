@@ -330,6 +330,14 @@ export const registerForEvent = async (eventId: string, userId: string) => {
   return eventsRepository.registerForEvent(eventId, userId);
 };
 
+export const cancelRegistrationForEvent = async (
+  eventId: string,
+  userId: string,
+  withdrawalNote: string | null | undefined
+) => {
+  return eventsRepository.cancelRegistrationForEvent(eventId, userId, withdrawalNote ?? null);
+};
+
 export const checkInToEvent = async (eventId: string, userId: string) => {
   const row = await eventsRepository.getEventById(eventId, userId);
   if (!row) {

@@ -205,7 +205,21 @@ export const GET_EVENT_BY_ID = `
     (SELECT COUNT(*)::int FROM event eh
       WHERE eh.host_id = e.host_id AND eh.status = 'published') AS host_events_published_count,
     COALESCE(e.ease_tags, '{}'::text[]) AS ease_tags,
-    e.interest_last_broadcast_at
+    e.interest_last_broadcast_at,
+    COALESCE(
+      (
+        SELECT json_agg(row_to_json(t))
+        FROM (
+          SELECT er.user_id::text AS user_id, p.first_name, p.avatar_url, er.created_at
+          FROM event_registration er
+          JOIN profile p ON p.user_id = er.user_id
+          WHERE er.event_id = e.event_id AND er.status = 'registered'
+          ORDER BY er.created_at ASC
+          LIMIT 8
+        ) t
+      ),
+      '[]'::json
+    ) AS attendee_preview
   FROM event e
   JOIN location       l ON l.location_id  = e.location_id
   JOIN event_category c ON c.category_id  = e.category_id
@@ -406,6 +420,27 @@ export const INSERT_EVENT_REGISTRATION = `
   VALUES ($1::uuid, $2::uuid, 'registered')
   ON CONFLICT (event_id, user_id) DO NOTHING
   RETURNING event_id
+`;
+
+/** Re-join after a previous self-cancel (same PK row, status was cancelled). */
+export const REACTIVATE_EVENT_REGISTRATION = `
+  UPDATE event_registration
+  SET status = 'registered', withdrawal_note = NULL
+  WHERE event_id = $1::uuid AND user_id = $2::uuid AND status = 'cancelled'
+  RETURNING event_id
+`;
+
+export const CANCEL_EVENT_REGISTRATION = `
+  UPDATE event_registration
+  SET status = 'cancelled', withdrawal_note = $3
+  WHERE event_id = $1::uuid AND user_id = $2::uuid AND status = 'registered'
+  RETURNING event_id
+`;
+
+export const DECREMENT_EVENT_ATTENDEE_COUNT = `
+  UPDATE event
+  SET current_attendee_count = GREATEST(0, current_attendee_count - 1), updated_at = NOW()
+  WHERE event_id = $1::uuid
 `;
 
 export const INCREMENT_EVENT_ATTENDEE_COUNT = `
