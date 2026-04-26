@@ -11,6 +11,7 @@ import { tryGrantReferralBonus } from './referralBonus.service';
 import { maybeNotifyVerificationNudge } from '../notifications/pushTriggers';
 import { assertAllowedDefaultCity } from '../app-config/onboardingCities.service';
 import crypto from 'node:crypto';
+import { normalizePlatformSource } from '../../core/utils/platformSource';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const SALT_ROUNDS = 12;
@@ -44,7 +45,9 @@ export const register = async (params: {
   defaultCity: string;
   firstName?: string;
   referralCode?: string;
+  source?: string;
 }) => {
+  const source = normalizePlatformSource(params.source, 'ios');
   const existing = await authRepository.findUserByEmail(params.email);
   if (existing) throw new Error('EMAIL_ALREADY_EXISTS');
 
@@ -63,6 +66,7 @@ export const register = async (params: {
     defaultCity: city,
     firstName: params.firstName?.trim() || params.email.split('@')[0] || 'Guest',
     referredByUserId,
+    signupSource: source,
   });
 
   if (referredByUserId) {
@@ -80,6 +84,7 @@ export const register = async (params: {
     ipAddress: null,
     expiresAt: accessExpiresAt,
     refreshTokenExpiresAt: refreshExpiresAt,
+    source,
   });
 
   await usersService.applyPostAuthGrants(user.user_id);
@@ -123,6 +128,7 @@ export const login = async (params: {
   password: string;
   deviceInfo: string | null;
   ipAddress: string | null;
+  source?: string;
 }) => {
   const user = await authRepository.findUserByEmail(params.email);
   if (!user) throw new Error('INVALID_CREDENTIALS');
@@ -142,6 +148,7 @@ export const login = async (params: {
     ipAddress: params.ipAddress,
     expiresAt: accessExpiresAt,
     refreshTokenExpiresAt: refreshExpiresAt,
+    source: normalizePlatformSource(params.source, 'ios'),
   });
 
   await usersService.applyPostAuthGrants(user.user_id);

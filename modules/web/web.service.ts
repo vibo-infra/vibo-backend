@@ -191,8 +191,14 @@ export const getHelpArticle = async (slug: string) => {
 
 const NEARBY_EVENTS_MAX_LIMIT = 100;
 
+function toNullableNumber(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 export const getNearbyEvents = async (
-  city: string,
+  city: string | null,
   limit: number,
   category?: string,
 ) => {
@@ -216,6 +222,8 @@ export const getNearbyEvents = async (
     price:     r.price ? parseFloat(r.price) : null,
     is_free:   r.is_free,
     starts_at: r.starts_at,
+    lat:       toNullableNumber(r.lat ?? r.latitude),
+    lng:       toNullableNumber(r.lng ?? r.longitude),
   }));
 };
 

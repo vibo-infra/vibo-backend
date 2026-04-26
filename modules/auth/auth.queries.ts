@@ -14,8 +14,8 @@ export const FIND_USER_BY_EMAIL = `
 `;
 
 export const CREATE_USER = `
-  INSERT INTO users (email, hashed_password, accepted_tos_at, default_city, referred_by_user_id)
-  VALUES ($1, $2, NOW(), $3, $4)
+  INSERT INTO users (email, hashed_password, accepted_tos_at, default_city, referred_by_user_id, signup_source)
+  VALUES ($1, $2, NOW(), $3, $4, $5)
   RETURNING
     user_id,
     email,
@@ -52,9 +52,10 @@ export const CREATE_SESSION = `
     device_info,
     ip_address,
     expires_at,
-    refresh_token_expires_at
+    refresh_token_expires_at,
+    source
   )
-  VALUES ($1, $2, $3, $4, $5, $6, $7)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
   RETURNING session_id, token, refresh_token, expires_at, refresh_token_expires_at
 `;
 

@@ -268,6 +268,8 @@ export const webQueries = {
       c.name                                 AS category,
       COALESCE(NULLIF(TRIM(l.address), ''), l.city, '') AS location,
       l.city,
+      l.latitude::double precision AS lat,
+      l.longitude::double precision AS lng,
       e.price,
       e.is_free,
       e.start_time                           AS starts_at
@@ -275,11 +277,20 @@ export const webQueries = {
     JOIN location       l ON l.location_id  = e.location_id
     JOIN event_category c ON c.category_id = e.category_id
     WHERE
-      l.city ILIKE $1
-      AND e.start_time > NOW()
+      e.start_time > NOW()
       AND e.status = 'published'
       AND e.is_private = FALSE
-      AND ($2::text IS NULL OR c.name ILIKE $2)
+      AND (
+        $1::text IS NULL
+        OR TRIM($1::text) = ''
+        OR LOWER(TRIM($1::text)) IN ('all', '*', 'global')
+        OR TRIM(COALESCE(l.city, '')) ILIKE '%' || TRIM($1::text) || '%'
+      )
+      AND (
+        $2::text IS NULL
+        OR TRIM($2::text) = ''
+        OR c.name ILIKE '%' || TRIM($2::text) || '%'
+      )
     ORDER BY e.start_time ASC
     LIMIT $3
   `,

@@ -21,9 +21,10 @@ export const CREATE_EVENT = `
     is_private,
     audience_type,
     status,
-    ease_tags
+    ease_tags,
+    source
   )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, COALESCE($16::text[], '{}'::text[]))
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, COALESCE($16::text[], '{}'::text[]), $17)
   RETURNING *
 `;
 
@@ -416,8 +417,8 @@ export const LOCK_EVENT_FOR_REGISTRATION = `
 `;
 
 export const INSERT_EVENT_REGISTRATION = `
-  INSERT INTO event_registration (event_id, user_id, status)
-  VALUES ($1::uuid, $2::uuid, 'registered')
+  INSERT INTO event_registration (event_id, user_id, status, source)
+  VALUES ($1::uuid, $2::uuid, 'registered', $3)
   ON CONFLICT (event_id, user_id) DO NOTHING
   RETURNING event_id
 `;
@@ -425,7 +426,7 @@ export const INSERT_EVENT_REGISTRATION = `
 /** Re-join after a previous self-cancel (same PK row, status was cancelled). */
 export const REACTIVATE_EVENT_REGISTRATION = `
   UPDATE event_registration
-  SET status = 'registered', withdrawal_note = NULL
+  SET status = 'registered', withdrawal_note = NULL, source = $3
   WHERE event_id = $1::uuid AND user_id = $2::uuid AND status = 'cancelled'
   RETURNING event_id
 `;

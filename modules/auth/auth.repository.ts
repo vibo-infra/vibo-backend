@@ -33,6 +33,7 @@ export const createUser = async (params: {
   defaultCity: string;
   firstName: string;
   referredByUserId: string | null;
+  signupSource: string;
 }) => {
   const client = await pool.connect();
   try {
@@ -42,6 +43,7 @@ export const createUser = async (params: {
       params.hashedPassword,
       params.defaultCity.trim(),
       params.referredByUserId,
+      params.signupSource,
     ]);
     const user = rows[0];
     await client.query(CREATE_PROFILE, [user.user_id, params.firstName.trim() || 'Guest']);
@@ -65,6 +67,7 @@ export const createSession = async (params: {
   ipAddress: string | null;
   expiresAt: Date;
   refreshTokenExpiresAt: Date;
+  source: string;
 }) => {
   const { rows } = await pool.query(CREATE_SESSION, [
     params.userId,
@@ -74,6 +77,7 @@ export const createSession = async (params: {
     params.ipAddress,
     params.expiresAt,
     params.refreshTokenExpiresAt,
+    params.source,
   ]);
   return rows[0];
 };

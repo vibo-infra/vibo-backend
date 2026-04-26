@@ -7,7 +7,7 @@ import * as authService from './auth.service';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, defaultCity, firstName, referralCode } = req.body ?? {};
+    const { email, password, defaultCity, firstName, referralCode, source } = req.body ?? {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -22,6 +22,7 @@ export const register = async (req: Request, res: Response) => {
       defaultCity: String(defaultCity),
       firstName: firstName !== undefined ? String(firstName) : undefined,
       referralCode: referralCode !== undefined ? String(referralCode) : undefined,
+      source: source !== undefined ? String(source) : undefined,
     });
     return res.status(201).json(result);
 
@@ -41,7 +42,7 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, source } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -52,6 +53,7 @@ export const login = async (req: Request, res: Response) => {
       password,
       deviceInfo: req.headers['user-agent'] ?? null,
       ipAddress: req.ip ?? null,
+      source: source !== undefined ? String(source) : undefined,
     });
 
     return res.status(200).json(result);

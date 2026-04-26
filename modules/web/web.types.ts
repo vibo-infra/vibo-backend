@@ -22,9 +22,10 @@ export interface InsertSignupParams {
 }
 
 export interface NearbyEventsParams {
-  city:      string;
-  limit:     number;
-  category:  string | null;
+  /** `null` = do not filter by city (all published upcoming events, up to limit). */
+  city: string | null;
+  limit: number;
+  category: string | null;
 }
 
 export interface NotifyCityInput {

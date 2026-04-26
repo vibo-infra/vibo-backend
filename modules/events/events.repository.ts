@@ -60,6 +60,7 @@ type EventInsertInput = {
   audienceType: string;
   status: string;
   easeTags?: string[];
+  source: string;
 };
 
 const insertLocation = async (db: Pool | PoolClient, data: LocationInput) => {
@@ -98,6 +99,7 @@ const insertEventRow = async (db: Pool | PoolClient, data: EventInsertInput) => 
     data.audienceType,
     data.status,
     tags,
+    data.source,
   ]);
   return rows[0];
 };
@@ -211,7 +213,7 @@ export const listEventReviews = async (eventId: string) => {
   return rows;
 };
 
-export const registerForEvent = async (eventId: string, userId: string) => {
+export const registerForEvent = async (eventId: string, userId: string, source: string) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -248,9 +250,9 @@ export const registerForEvent = async (eventId: string, userId: string) => {
       await client.query('ROLLBACK');
       return { ok: false as const, code: 'EVENT_FULL' as const };
     }
-    const ins = await client.query(INSERT_EVENT_REGISTRATION, [eventId, userId]);
+    const ins = await client.query(INSERT_EVENT_REGISTRATION, [eventId, userId, source]);
     if (!ins.rowCount) {
-      const react = await client.query(REACTIVATE_EVENT_REGISTRATION, [eventId, userId]);
+      const react = await client.query(REACTIVATE_EVENT_REGISTRATION, [eventId, userId, source]);
       if (react.rowCount) {
         await client.query(INCREMENT_EVENT_ATTENDEE_COUNT, [eventId]);
         await client.query('COMMIT');

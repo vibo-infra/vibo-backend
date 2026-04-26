@@ -227,7 +227,11 @@ export const cancelRegistration = async (req: Request, res: Response) => {
 export const registerForEvent = async (req: Request, res: Response) => {
   try {
     const eventId = req.params.id as string;
-    const r = await eventsService.registerForEvent(eventId, req.user.userId);
+    const source =
+      typeof (req.body as { source?: unknown })?.source === 'string'
+        ? (req.body as { source: string }).source
+        : undefined;
+    const r = await eventsService.registerForEvent(eventId, req.user.userId, source);
     if (!r.ok) {
       const map: Record<string, { status: number; error: string }> = {
         EVENT_NOT_FOUND: { status: 404, error: 'Event not found' },

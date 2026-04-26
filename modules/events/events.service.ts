@@ -25,6 +25,7 @@ import {
   notifyInterestMomentumIfNeeded,
   notifyNearbyUsersOfPublishedEvent,
 } from '../notifications/eventLifecyclePushes.service';
+import { normalizePlatformSource } from '../../core/utils/platformSource';
 
 const parseWaitlistTier = (v: unknown): WaitlistTier => {
   if (v === 'tier1' || v === 'tier2') return v;
@@ -46,6 +47,7 @@ type CreateEventBody = {
   publishNow?: boolean;
   /** Short labels shown on cards, e.g. solo-friendly, casual, drop-in */
   easeTags?: string[];
+  source?: string;
   location: {
     address: string;
     city: string;
@@ -153,6 +155,7 @@ export const createEvent = async (hostId: string, body: CreateEventBody) => {
       audienceType: body.audienceType ?? 'everyone',
       status,
       easeTags: body.easeTags,
+      source: normalizePlatformSource(body.source, 'ios'),
     });
 
     if (hostingTxId && event?.event_id) {
@@ -326,8 +329,12 @@ export const submitReview = async (
   );
 };
 
-export const registerForEvent = async (eventId: string, userId: string) => {
-  return eventsRepository.registerForEvent(eventId, userId);
+export const registerForEvent = async (eventId: string, userId: string, source?: string) => {
+  return eventsRepository.registerForEvent(
+    eventId,
+    userId,
+    normalizePlatformSource(source, 'ios')
+  );
 };
 
 export const cancelRegistrationForEvent = async (

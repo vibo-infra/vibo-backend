@@ -170,8 +170,19 @@ export const getHelpArticle = async (req: Request, res: Response) => {
 export const getNearbyEvents = async (req: Request, res: Response) => {
   try {
     res.set('Cache-Control', 'public, max-age=300');
-    const { city = 'Mumbai', limit = '100', category } = req.query as Record<string, string>;
-    const data = await webService.getNearbyEvents(city, parseInt(limit, 10), category);
+    const { city, limit = '100', category } = req.query as Record<string, string | undefined>;
+    let cityFilter: string | null = null;
+    if (city != null && String(city).trim() !== '') {
+      const c = String(city).trim();
+      if (!['all', '*', 'global'].includes(c.toLowerCase())) {
+        cityFilter = c;
+      }
+    }
+    const data = await webService.getNearbyEvents(
+      cityFilter,
+      parseInt(limit ?? '100', 10),
+      category,
+    );
     return res.status(200).json({ success: true, data });
   } catch (err: any) {
     console.error(err);
